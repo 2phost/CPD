@@ -6,26 +6,31 @@
 
 int main(int argc, char **argv){
 	
-	const char *const name = (argc && argv[1]) ? argv[1] : "";
-	char *file_name = (char *)malloc(strlen(name) + 1);
-	if (file_name != NULL) {
-		strncpy(file_name, name, sizeof(file_name));
-	} else {
-		/* Handle error */
+	int x, y, size;
+	int w_breeding, s_breeding, w_starvation, gen_num;
+	entity_types type;
+	FILE * input_file;
+	
+	w_breeding = atoi(argv[2]);
+	s_breeding = atoi(argv[3]);
+	w_starvation = atoi(argv[4]);
+	gen_num = atoi(argv[5]);
+	
+	if(argc < 5)
+		return -1;
+		
+	input_file = fopen(argv[1], "r");
+	if(input_file == NULL)
+		return -1;
+		
+	fscanf(input_file, "%d", &size);
+	
+	while(fscanf(input_file, "%d %d %c", &x, &y, &type) != EOF){
+		world[x][y].type = type;
 	}
 	
-	/* file manage */
-	free(file_name);
 	
-	int x, y;
-	entity_types type;
-	int w_breeding, s_breeding, w_starvation, gen_num;
-	
-	scanf("%d %d %c", &x, &y, &type);
-	scanf("%d", &w_breeding);
-	scanf("%d", &s_breeding);
-	scanf("%d", &w_starvation);
-	scanf("%d", &gen_num);
-	
+	fclose(input_file);
+
 	return 0;
 }
