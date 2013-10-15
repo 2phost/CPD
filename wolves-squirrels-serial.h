@@ -5,10 +5,10 @@
 #define MAX 50
 
 enum entity {
-	WOLVE,
-	SQUIRREL,
-	ICE,
-	TREE
+	w,
+	s,
+	i,
+	t
 };
 
 typedef enum entity entity_types;
