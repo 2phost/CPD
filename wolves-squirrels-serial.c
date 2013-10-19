@@ -35,26 +35,12 @@ int main(int argc, char **argv){
 	fclose(input_file);
 	
 	
-	
 	/* Generate */
 	while(gen_num != 0){
-	
+		
 		/* 1st sub-generation - RED */
 		for(i=0; i<size; i++){
-			i%2==0? j=0 : j=1;
-			
-			for(; j<size; j+2){
-				
-			}
-		}
-			
-			
-		/* 2nd sub-generation */
-		
-		
-		
-		for(i=0; i<size; i++){
-			for(j=0; j<size; j++){
+			for(j = i%2==0 ? 0 : 1 ; j<size; j+=2){
 				switch(world[i][j].type){
 					case w:
 					
@@ -68,6 +54,15 @@ int main(int argc, char **argv){
 				}
 			}
 		}
+			
+		/* 2nd sub-generation */
+		for(i=0; i<size; i++){
+			for(j = i%2==0 ? 1 : 0 ; j<size; j+=2){
+			
+			}
+		}
+		
+		
 		gen_num--;
 	}
 	
