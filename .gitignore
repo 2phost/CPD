@@ -1,10 +1,12 @@
 # Object files
 *.o
 *.ko
+*~
 
 # Libraries
 *.lib
 *.a
+*.gch
 
 # Shared objects (inc. Windows DLLs)
 *.dll
