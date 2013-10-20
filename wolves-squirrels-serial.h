@@ -7,6 +7,7 @@
 enum entity {
 	wolf='w',
 	squirrel='s',
+	quirrel_on_tree = '$',
 	ice='i',
 	tree='t',
 	empty=' '
@@ -29,6 +30,10 @@ struct point{
 
 /* Prints the content of the world, which corresponds to a square matriz of size world_size */
 int printWorld(int world_size);
+
+/* Prints the contents of the world, according to the expected output format, which must correspond
+ * to the input file format. */
+int printWorldFormatted(int world_size);
 
 /* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
 int initWorld(int world_size);

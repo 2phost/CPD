@@ -75,6 +75,22 @@ int printWorld(int world_size){
 	return 0;
 }
 
+int printWorldFormatted(int world_size){
+
+	int i, j;
+
+	printf("%d\n", world_size);
+	
+	for(i=0; i < world_size; i++){
+		for(j=0; j < world_size; j++){
+			if(world[i][j].type != empty)			
+				printf("%d %d %c\n", i, j, world[i][j].type);	
+		}
+	}
+
+	return 0;
+}
+
 int clearWorldCell(int x, int y){
 
 	world[x][y].type = empty;
@@ -253,6 +269,7 @@ int main(int argc, char **argv){
 	}
 	
 	/* Output */
+	printWorldFormatted(size);
 			
 	return 0;
 }
