@@ -103,13 +103,21 @@ int main(int argc, char **argv){
 				switch(world[i][j].type){
 
 					case wolf:
+						/* Updates breeding and starvation periods */
+						world[i][j].breeding_period--;
+						world[i][j].starvation_period--;
+
 						/* neighboring cells has a squirel? true:eating and increase starvation period*/
 						/* if multiple neighboring use method*/
 						/* if no neighboring: moves to empty cell or use method */
-						
+						if(move(wolf, i, j, size) == 1)
+
+								
+							
 						/* if complete breeding, leave a wolfat beginning of stavation and breeding period*/
 						/* if move false, cannot breed */
 						/* if stavation: it dies */
+		
 					
 						break;
 					case squirrel: /*Squirrels never starve*/

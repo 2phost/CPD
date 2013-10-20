@@ -25,3 +25,6 @@ int printWorld(int world_size);
 
 /* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
 int initWorld(int world_size);
+
+/**/
+int move(entity_types e, int x, int y, int size){
