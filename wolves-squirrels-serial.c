@@ -1,21 +1,45 @@
 #include "wolves-squirrels-serial.h"
 
-
-void move(entity_types e, int x, int y, int size){
+/* Return 1 if it moves */
+coord move(entity_types e, int x, int y, int size){
 	int cell_number = 0;
 	int cell_select = 0;
 	int p = 0;
 
-	p += world[x-1][y].type == ' ' ? 1 : 0;
-	p += world[x][y+1].type == ' ' ? 1 : 0;
-	p += world[x+1][y].type == ' ' ? 1 : 0;
-	p += world[x-1][y-1].type == ' ' ? 1 : 0;
-		
+	/*  */
+	if(e == wolf){
+		/* Search for Squirrels */
+		p += world[x-1][y].type == squirrel ? 1 : 0;
+		p += world[x][y+1].type == squirrel ? 1 : 0;
+		p += world[x+1][y].type == squirrel ? 1 : 0;
+		p += world[x-1][y-1].type == squirrel ? 1 : 0;
+		/* If there are not Squirrels search for empty cells*/
+		if(p>0){
+			p += world[x-1][y].type == empty ? 1 : 0;
+			p += world[x][y+1].type == empty ? 1 : 0;
+			p += world[x+1][y].type == empty ? 1 : 0;
+			p += world[x-1][y-1].type == empty ? 1 : 0;
+		}
+	} else if(e == squirrel) {
+		/* Search for Trees */
+		p += world[x-1][y].type == tree ? 1 : 0;
+		p += world[x][y+1].type == tree ? 1 : 0;
+		p += world[x+1][y].type == tree ? 1 : 0;
+		p += world[x-1][y-1].type == tree ? 1 : 0;
+		/* If there are not Trees search for empty cells*/
+		if(p>0){
+			p += world[x-1][y].type == empty ? 1 : 0;
+			p += world[x][y+1].type == empty ? 1 : 0;
+			p += world[x+1][y].type == empty ? 1 : 0;
+			p += world[x-1][y-1].type == empty ? 1 : 0;
+		}
+	}
+	
 	cell_number = x*size + y;
 	cell_select = cell_number % p;
 	
 	printf("%d\n", cell_select);
-	
+	return -1;
 }
 
 
