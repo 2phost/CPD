@@ -45,4 +45,4 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 int makeBabies(entity_types type, int prev_x, int prev_y, int curr_x, int curr_y, int breeding_period, int starvation_period);
 
 /**/
-coord move(entity_types e, int x, int y, int size);
+struct world *move(entity_types e, int x, int y, int size);
