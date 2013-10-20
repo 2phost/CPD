@@ -79,6 +79,8 @@ int main(int argc, char **argv){
 		
 	fscanf(input_file, "%d", &size);
 	
+	initWorld(size);
+
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
 		world[x][y].type = type_code;
 		if(type == wolf){
@@ -113,6 +115,7 @@ int main(int argc, char **argv){
 					case squirrel: /*Squirrels never starve*/
 						/*move()
 						 if move false, cannot breed*/
+
 						if(!world[i][j].breeding_period /*&& move true*/){
 							/*leave behind a squirel at the beginning of the breeding period*/
 							/*starts a new breeding period*/	
