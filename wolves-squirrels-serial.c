@@ -5,7 +5,6 @@ struct world *move(entity_types e, int x, int y, int size){
 	int cell_number = 0;
 	int cell_select = 0;
 	int p = 0;
-	int empty = 0;
 	struct world *pos[4];
 
 	/* Search */
@@ -18,35 +17,34 @@ struct world *move(entity_types e, int x, int y, int size){
 				pos[p++] = &world[x][y+1];
 			if(world[x+1][y].type == squirrel)
 				pos[p++] = &world[x+1][y];
-			if(world[x-1][y-1].type == squirrel)
-				pos[p++] = &world[x-1][y-1];
+			if(world[x][y-1].type == squirrel)
+				pos[p++] = &world[x][y-1];
+				
+			if(p==0){
+				if(world[x-1][y].type == empty)
+					pos[p++] = &world[x-1][y];
+				if(world[x][y+1].type == empty)
+					pos[p++] = &world[x][y+1];
+				if(world[x+1][y].type == empty)
+					pos[p++] = &world[x+1][y];
+				if(world[x][y-1].type == empty)
+					pos[p++] = &world[x][y-1];
+			}
 			break;
 		case squirrel:
 			/* Search for Trees */
-			if(world[x-1][y].type == tree)
+			if(world[x-1][y].type == tree || world[x-1][y].type == empty)
 				pos[p++] = &world[x-1][y];
-			if(world[x][y+1].type == tree)
+			if(world[x][y+1].type == tree || world[x][y+1].type == empty)
 				pos[p++] = &world[x][y+1];
-			if(world[x+1][y].type == tree)
+			if(world[x+1][y].type == tree || world[x+1][y].type == empty)
 				pos[p++] = &world[x+1][y];
-			if(world[x-1][y-1].type == tree)
-				pos[p++] = &world[x-1][y-1];
+			if(world[x][y-1].type == tree || world[x][y-1].type == empty)
+				pos[p++] = &world[x][y-1];
 			break;
 		default:
 			return NULL;
-	}
-	/* If there are not Squirrels or Trees search for empty cells*/
-	if(p==0){
-		empty=1;
-		if(world[x-1][y].type == empty)
-			pos[p++] = &world[x-1][y];
-		if(world[x][y+1].type == empty)
-			pos[p++] = &world[x][y+1];
-		if(world[x+1][y].type == empty)
-			pos[p++] = &world[x+1][y];
-		if(world[x-1][y-1].type == empty)
-			pos[p++] = &world[x-1][y-1];
-	}
+	}	
 	
 	if(p>0){
 		cell_number = x*size + y;
