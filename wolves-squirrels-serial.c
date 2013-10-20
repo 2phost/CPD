@@ -59,6 +59,8 @@ int main(int argc, char **argv){
 		
 	fscanf(input_file, "%d", &size);
 	
+	initWorld(size);
+
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
 		world[x][y].type = type_code;
 		if(type == wolf){

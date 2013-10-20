@@ -3,7 +3,7 @@ all:
 	gcc wolves-squirrels-serial.o -o wolves-squirrels-serial.out
 
 run-test:
-	./wolves-squirrels-serial a.in 1 1 1 1
+	./wolves-squirrels-serial.out a.in 1 1 1 1
 
 clean:
 	rm wolves-squirrels-serial.o wolves-squirrels-serial.out
