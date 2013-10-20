@@ -1,6 +1,6 @@
 #include "wolves-squirrels-serial.h"
 
-<<<<<<< HEAD
+
 void move(entity_types e, int x, int y, int size){
 	int cell_number = 0;
 	int cell_select = 0;
@@ -18,7 +18,7 @@ void move(entity_types e, int x, int y, int size){
 	
 }
 
-=======
+
 int initWorld(int world_size){
 	
 	int i, j;
@@ -49,7 +49,7 @@ int printWorld(int world_size){
 
 	return 0;
 }
->>>>>>> 00614c7505e711748896044b1bec6360afe6950e
+
 
 int main(int argc, char **argv){
 
@@ -99,8 +99,8 @@ int main(int argc, char **argv){
 		for(i=0; i<size; i++){
 			for(j = i%2==0 ? 0 : 1 ; j<size; j+=2){
 				switch(world[i][j].type){
-<<<<<<< HEAD
-					case w: 
+
+					case wolf:
 						/* neighboring cells has a squirel? true:eating and increase starvation period*/
 						/* if multiple neighboring use method*/
 						/* if no neighboring: moves to empty cell or use method */
@@ -108,16 +108,9 @@ int main(int argc, char **argv){
 						/* if complete breeding, leave a wolfat beginning of stavation and breeding period*/
 						// if move false, cannot breed
 						/* if stavation: it dies */
-=======
-					case wolf:
 					
 						break;
-					case squirrel:
->>>>>>> 00614c7505e711748896044b1bec6360afe6950e
-						
-						
-						break;
-					case s: /*Squirrels never starve*/
+					case squirrel:: /*Squirrels never starve*/
 						//move()
 						// if move false, cannot breed
 						if(!world[i][j].breeding_period /*&& move true*/){
