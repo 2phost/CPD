@@ -42,7 +42,9 @@ int printWorldFormatted(int world_size);
 int correctWorld(entity_types type, int prev_x, int prev_y, int curr_x, int curr_y, int world_size);
 
 /* Clears a specified cell in the world */
-int clearWorldCell(int x, int y);
+int clearWorldCell(struct world* cell);
+
+int killWolf(struct world* wolf);
 
 /* Processes the cell's iteration, depending of what kind of entity is at the current cell
  * specified by the position (x, y) */
