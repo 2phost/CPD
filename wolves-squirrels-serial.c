@@ -39,13 +39,13 @@ struct world *move(entity_types e, int x, int y, int size){
 	if(p==0){
 		empty=1;
 		if(world[x-1][y].type == empty)
-				pos[p++] = &world[x-1][y];
-			if(world[x][y+1].type == empty)
-				pos[p++] = &world[x][y+1];
-			if(world[x+1][y].type == empty)
-				pos[p++] = &world[x+1][y];
-			if(world[x-1][y-1].type == empty)
-				pos[p++] = &world[x-1][y-1];
+			pos[p++] = &world[x-1][y];
+		if(world[x][y+1].type == empty)
+			pos[p++] = &world[x][y+1];
+		if(world[x+1][y].type == empty)
+			pos[p++] = &world[x+1][y];
+		if(world[x-1][y-1].type == empty)
+			pos[p++] = &world[x-1][y-1];
 	}
 	
 	if(p>0){
