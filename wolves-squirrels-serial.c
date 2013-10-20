@@ -151,6 +151,20 @@ int printWorldFormatted(int world_size){
 	return 0;
 }
 
+int correctWorld(entity_types type, int prev_x, int prev_y, int curr_x, int curr_y, int world_size){
+	
+	switch(type){
+		case wolf:
+			break;
+		case squirrel:
+			break;
+		default:
+			break;
+	}
+
+	return 0;
+}
+
 int clearWorldCell(int x, int y){
 
 	world[x][y].type = empty;
@@ -228,7 +242,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			/* Updates breeding period and moves the squirrel*/
 			ent_breeding = --world[x][y].breeding_period;
 			move_motion = move(squirrel, x, y, world_size);
-		
+
 			/*DEBUG*/
 			if(move_motion == NULL)
 				printf("is unable to move\n");
@@ -241,7 +255,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			if(!ent_breeding && move_motion != NULL)
 				makeBabies(squirrel, x, y, move_motion->x, move_motion->y, s_breeding, 0);
 			
-
+			
 			/*Squirrels never starve*/
 			break;
 

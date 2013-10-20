@@ -28,6 +28,9 @@ struct point{
 	int ate;
 };
 
+/* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
+int initWorld(int world_size);
+
 /* Prints the content of the world, which corresponds to a square matriz of size world_size */
 int printWorld(int world_size);
 
@@ -35,8 +38,8 @@ int printWorld(int world_size);
  * to the input file format. */
 int printWorldFormatted(int world_size);
 
-/* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
-int initWorld(int world_size);
+/* Corrects the world, according to the performed move */
+int correctWorld(entity_types type, int prev_x, int prev_y, int curr_x, int curr_y, int world_size);
 
 /* Clears a specified cell in the world */
 int clearWorldCell(int x, int y);
