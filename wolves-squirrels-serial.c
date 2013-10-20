@@ -1,45 +1,106 @@
 #include "wolves-squirrels-serial.h"
 
-/* Return 1 if it moves */
+/* Move */
 coord move(entity_types e, int x, int y, int size){
 	int cell_number = 0;
 	int cell_select = 0;
 	int p = 0;
+	int count = 0;
+	int empty = 0;
+	coord result = (coord)malloc(sizeof(struct point));
 
-	/*  */
-	if(e == wolf){
-		/* Search for Squirrels */
-		p += world[x-1][y].type == squirrel ? 1 : 0;
-		p += world[x][y+1].type == squirrel ? 1 : 0;
-		p += world[x+1][y].type == squirrel ? 1 : 0;
-		p += world[x-1][y-1].type == squirrel ? 1 : 0;
-		/* If there are not Squirrels search for empty cells*/
-		if(p>0){
-			p += world[x-1][y].type == empty ? 1 : 0;
-			p += world[x][y+1].type == empty ? 1 : 0;
-			p += world[x+1][y].type == empty ? 1 : 0;
-			p += world[x-1][y-1].type == empty ? 1 : 0;
-		}
-	} else if(e == squirrel) {
-		/* Search for Trees */
-		p += world[x-1][y].type == tree ? 1 : 0;
-		p += world[x][y+1].type == tree ? 1 : 0;
-		p += world[x+1][y].type == tree ? 1 : 0;
-		p += world[x-1][y-1].type == tree ? 1 : 0;
-		/* If there are not Trees search for empty cells*/
-		if(p>0){
-			p += world[x-1][y].type == empty ? 1 : 0;
-			p += world[x][y+1].type == empty ? 1 : 0;
-			p += world[x+1][y].type == empty ? 1 : 0;
-			p += world[x-1][y-1].type == empty ? 1 : 0;
-		}
+	/* Search */
+	switch(world[x][y].type){
+		case wolf:
+			/* Search for Squirrels */
+			p += world[x-1][y].type == squirrel ? 1 : 0;
+			p += world[x][y+1].type == squirrel ? 1 : 0;
+			p += world[x+1][y].type == squirrel ? 1 : 0;
+			p += world[x-1][y-1].type == squirrel ? 1 : 0;
+			break;
+		case squirrel:
+			/* Search for Trees */
+			p += world[x-1][y].type == tree ? 1 : 0;
+			p += world[x][y+1].type == tree ? 1 : 0;
+			p += world[x+1][y].type == tree ? 1 : 0;
+			p += world[x-1][y-1].type == tree ? 1 : 0;
+			break;
+		default:
+			return NULL;
+	}
+	/* If there are not Squirrels or Trees search for empty cells*/
+	if(p==0){
+		empty=1;
+		p += world[x-1][y].type == empty ? 1 : 0;
+		p += world[x][y+1].type == empty ? 1 : 0;
+		p += world[x+1][y].type == empty ? 1 : 0;
+		p += world[x-1][y-1].type == empty ? 1 : 0;
 	}
 	
-	cell_number = x*size + y;
-	cell_select = cell_number % p;
-	
-	printf("%d\n", cell_select);
-	return -1;
+	/* TODO MELHORAR IMPLEMENTAÇÃO */
+	if(p>0){
+		cell_number = x*size + y;
+		cell_select = cell_number % p;
+		
+		printf("%d\n", cell_select);
+		
+		if(empty){
+			count += world[x-1][y].type == empty ? 1 : 0;
+			if(count==p){
+				result->x=x-1;
+				result->y=y;
+				return result;
+			}
+			count += world[x][y+1].type == empty ? 1 : 0;
+			if(count==p){
+				result->x=x;
+				result->y=y+1;
+				return result;
+			}
+			count += world[x+1][y].type == empty ? 1 : 0;
+			if(count==p){
+				result->x=x+1;
+				result->y=y;
+				return result;
+			}
+			count += world[x-1][y-1].type == empty ? 1 : 0;
+			if(count==p){
+				result->x=x-1;
+				result->y=y-1;
+				return result;
+			}
+		} else {
+			count += world[x-1][y].type == (tree || squirrel) ? 1 : 0;
+			if(count==p){
+				result->x=x-1;
+				result->y=y;
+				return result;
+			}
+			count += world[x][y+1].type == (tree || squirrel) ? 1 : 0;
+			if(count==p){
+				result->x=x;
+				result->y=y+1;
+				return result;
+			}
+			count += world[x+1][y].type == (tree || squirrel) ? 1 : 0;
+			if(count==p){
+				result->x=x+1;
+				result->y=y;
+				return result;
+			}
+			count += world[x-1][y-1].type == (tree || squirrel) ? 1 : 0;
+			if(count==p){
+				result->x=x-1;
+				result->y=y-1;
+				return result;
+			}
+		}
+		
+		
+	}
+		
+	return NULL;
+
 }
 
 

@@ -24,7 +24,7 @@ typedef struct point * coord;
 struct point{
 	int x;
 	int y;
-}
+};
 
 /* Prints the content of the world, which corresponds to a square matriz of size world_size */
 int printWorld(int world_size);
