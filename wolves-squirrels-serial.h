@@ -7,7 +7,7 @@
 enum entity {
 	wolf='w',
 	squirrel='s',
-	quirrel_on_tree = '$',
+	squirrel_on_tree = '$',
 	ice='i',
 	tree='t',
 	empty=' '
@@ -50,7 +50,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 
 /* Given the entity previous position and it's current position, creates an heir at the previous position
    with the specified breeding and starvation periods, and restarts the entity's breeding period */
-int makeBabies(entity_types type, int prev_x, int prev_y, int curr_x, int curr_y, int breeding_period, int starvation_period);
+int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_cell, int breeding_period, int starvation_period);
 
 /**/
 struct world *move(entity_types e, int x, int y, int size);
