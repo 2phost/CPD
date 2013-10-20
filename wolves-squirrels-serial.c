@@ -135,6 +135,107 @@ int printWorld(int world_size){
 	return 0;
 }
 
+int clearWorldCell(int x, int y){
+
+	world[x][y].type = empty;
+	world[x][y].breeding_period = 0;
+	world[x][y].starvation_period = 0;
+
+	return 1;
+}
+
+int makeBabies(entity_types type, int prev_x, int prev_y, int curr_x, int curr_y, int breeding_period, int starvation_period){
+
+	/*Create Baby*/
+	world[prev_x][prev_y].type = type;
+	world[prev_x][prev_y].breeding_period = breeding_period;
+	world[prev_x][prev_y].starvation_period = starvation_period;
+
+	/* Restart entity breeding period */
+	world[curr_x][curr_y].breeding_period = breeding_period;
+
+	return 0;
+}
+
+int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size){
+	
+	coord move_motion = NULL;
+	int ent_breeding, ent_starvation;
+		
+	switch(world[x][y].type){
+
+		/* At each iteration the wolf trie to move to a cell with a squirrel
+		 * in order to eat it, but he can also move to empty cells.
+		 * If it's breeding period is 0, and he ate a squirrel, he creates an
+		 * heir, at his previous position, otherwise waits until he is able to
+		 * eat a squirrel to create the heir.
+		 * At each iteration the wolf starvation period decrements, if it reaches
+		 * 0 before the wolf is able to eat a squirrel, the wolf dies. But if he
+		 * is able to eat a squirrel, his starvation period restarts. */
+		case wolf:
+			/* Updates breeding and starvation periods and moves the wolf*/
+			ent_breeding = --world[x][y].breeding_period;
+			ent_starvation = --world[x][y].starvation_period;
+			move_motion = move(wolf, x, y, world_size);
+
+			/* if complete breeding : leave a wolf at beginning of stavation and breeding period
+			 * otherwise : cannot breed */
+			if(!ent_breeding && move_motion != NULL && move_motion->ate)
+				makeBabies(wolf, x, y, move_motion->x, move_motion->y, w_breeding, w_starvation);
+
+
+			/* if the wolf ate a squirrel : it's starvation period is incremented */
+			if(move_motion->ate)
+				world[move_motion->x][move_motion->y].starvation_period = w_starvation;
+
+			/* if stavation: it dies */
+			if(ent_starvation == 0){
+				if(move_motion == NULL){
+					clearWorldCell(x, y);
+				}else
+					clearWorldCell(move_motion->x, move_motion->y);
+			}
+
+			break;
+
+		/* At each iteration the squirrel tries to move to an empty cell
+         * he can also move to a cell with a tree.
+         * If it's breeding period is 0 and he moved e creates an heir at
+         * is previous position, otherwise waits until he is able to move
+         * to create the heir.
+         * Squirrels never starve. */
+		case squirrel: 
+
+			/*DEBUG*/
+				printf("Squirrel at position (%d, %d) ", x, y);
+
+			/* Updates breeding period and moves the squirrel*/
+			ent_breeding = --world[x][y].breeding_period;
+			move_motion = move(squirrel, x, y, world_size);
+		
+			/*DEBUG*/
+			if(move_motion == NULL)
+				printf("is unable to move\n");
+			else
+				printf("moving to (%d, %d)", move_motion->x, move_motion->y);
+
+
+			/* if breeding period and moved : he leaves behing a squirrel at the beginning of the breeding period
+			 * otherwise: he cannot breed */
+			if(!ent_breeding && move_motion != NULL)
+				makeBabies(squirrel, x, y, move_motion->x, move_motion->y, s_breeding, 0);
+			
+
+			/*Squirrels never starve*/
+			break;
+
+		default:
+			break;
+	}
+
+	return 0;
+}
+
 
 int main(int argc, char **argv){
 
@@ -144,7 +245,8 @@ int main(int argc, char **argv){
 	entity_types type = empty;
 	char type_code;
 	FILE * input_file;
-	
+
+
 	if(argc < 5){
 		printf("ERROR: Expected 5 arguments provided %d.\n", argc);
 		printf("Expected:\n./wolves-squirrels-serial <InputFile> <WolfBreedingPeriod> <SquirrelBreedingPeriod> <WolfStarvationPerior> <Generations>\n");	
@@ -166,6 +268,7 @@ int main(int argc, char **argv){
 	
 	initWorld(size);
 
+	
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
 		world[x][y].type = type_code;
 		if(type == wolf){
@@ -178,59 +281,38 @@ int main(int argc, char **argv){
 	
 	fclose(input_file);
 	
+
+	/*DEBUG*/
+	printf("INITIAL WORLD\n");	
+	printWorld(size);
+	printf("\n");
 	
 	/* Generate */
 	while(gen_num != 0){
 		
 		/* 1st sub-generation - RED */
 		for(i=0; i<size; i++){
-			for(j = i%2==0 ? 0 : 1 ; j<size; j+=2){
-				switch(world[i][j].type){
-
-					case wolf:
-						/* neighboring cells has a squirel? true:eating and increase starvation period*/
-						/* if multiple neighboring use method*/
-						/* if no neighboring: moves to empty cell or use method */
-						
-						/* if complete breeding, leave a wolfat beginning of stavation and breeding period*/
-						/* if move false, cannot breed */
-						/* if stavation: it dies */
-					
-						break;
-					case squirrel: /*Squirrels never starve*/
-						/*move()
-						 if move false, cannot breed*/
-
-						if(!world[i][j].breeding_period /*&& move true*/){
-							/*leave behind a squirel at the beginning of the breeding period*/
-							/*starts a new breeding period*/	
-						} else {
-							
-						}
-						break;
-					default:
-						
-						break;
-				}
-			}
+			for(j = i%2 == 0 ? 0 : 1 ; j<size; j+=2){
+				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
+			}		
 		}
 			
 		/* 2nd sub-generation */
 		for(i=0; i<size; i++){
-			for(j = i%2==0 ? 1 : 0 ; j<size; j+=2){
-			
+			for(j = i%2 == 0 ? 1 : 0 ; j<size; j+=2){
+				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
 			}
 		}
-		
-		
+
+		/*DEBUG*/
+		printf("Iteration %d:\n", gen_num);		
+		printWorld(size);
+		printf("\n");
+
 		gen_num--;
 	}
 	
 	/* Output */
-	for(i=0; i<size; i++)
-		for(j=0; j<size; j++){
-
-		}
 			
 	return 0;
 }

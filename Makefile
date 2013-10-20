@@ -6,4 +6,4 @@ run-test:
 	./wolves-squirrels-serial.out a.in 1 1 1 1
 
 clean:
-	rm wolves-squirrels-serial.o wolves-squirrels-serial.out
+	rm wolves-squirrels-serial.o wolves-squirrels-serial.out wolves-squirrels-serial.h.gch
