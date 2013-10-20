@@ -39,7 +39,8 @@ coord move(entity_types e, int x, int y, int size){
 	cell_select = cell_number % p;
 	
 	printf("%d\n", cell_select);
-	return -1;
+	
+	return NULL;
 }
 
 
@@ -74,6 +75,27 @@ int printWorld(int world_size){
 	return 0;
 }
 
+int clearWorldCell(int x, int y){
+
+	world[x][y].type = empty;
+	world[x][y].breeding_period = 0;
+	world[x][y].starvation_period = 0;
+
+	return 1;
+}
+
+int makeBabies(entity_types type, int prev_x, int prev_y, int curr_x, int curr_y, int breeding_period, int starvation_period){
+
+	/*Create Baby*/
+	world[prev_x][prev_y].type = type;
+	world[prev_x][prev_y].breeding_period = breeding_period;
+	world[prev_x][prev_y].starvation_period = starvation_period;
+
+	/* Restart entity breeding period */
+	world[curr_x][curr_y].breeding_period = breeding_period;
+
+	return 0;
+}
 
 int main(int argc, char **argv){
 
@@ -83,6 +105,7 @@ int main(int argc, char **argv){
 	entity_types type = empty;
 	char type_code;
 	FILE * input_file;
+	coord move_motion = NULL;
 	
 	if(argc < 5){
 		printf("ERROR: Expected 5 arguments provided %d.\n", argc);
@@ -134,29 +157,44 @@ int main(int argc, char **argv){
 						/* neighboring cells has a squirel? true:eating and increase starvation period*/
 						/* if multiple neighboring use method*/
 						/* if no neighboring: moves to empty cell or use method */
-						if(move(wolf, i, j, size) == 1)
+						move_motion = move(wolf, i, j, size);
+
+						if(move_motion != NULL) /* wolf moved */
+							;
 
 								
 							
-						/* if complete breeding, leave a wolfat beginning of stavation and breeding period*/
+						/* if complete breeding, leave a wolf at beginning of stavation and breeding period*/
 						/* if move false, cannot breed */
+						if(world[i][j].breeding_period && move_motion != NULL)
+							makeBabies(wolf, i, j, move_motion->x, move_motion->y, w_breeding, w_starvation);
+
 						/* if stavation: it dies */
-		
+						if(world[i][j].starvation_period){
+							if(move_motion == NULL){
+								clearWorldCell(i, j);
+							}else
+								clearWorldCell(move_motion->x, move_motion->y);
+						}
 					
 						break;
-					case squirrel: /*Squirrels never starve*/
-						/*move()
-						 if move false, cannot breed*/
+					case squirrel: 
 
-						if(!world[i][j].breeding_period /*&& move true*/){
-							/*leave behind a squirel at the beginning of the breeding period*/
-							/*starts a new breeding period*/	
-						} else {
-							
-						}
+						/* Updates breeding period */
+						world[i][j].breeding_period--;
+
+						move_motion = move(squirrel, i, j, size);
+
+						/*if move false, cannot breed otherwise
+						  leave behind a squirel at the beginning of the breeding period
+						  starts a new breeding period*/	
+						if(!world[i][j].breeding_period && move_motion != NULL)
+							makeBabies(squirrel, i, j, move_motion->x, move_motion->y, s_breeding, 0);
+
+						/*Squirrels never starve*/
+
 						break;
 					default:
-						
 						break;
 				}
 			}
