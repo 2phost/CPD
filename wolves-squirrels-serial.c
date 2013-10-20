@@ -108,13 +108,13 @@ int main(int argc, char **argv){
 						/* if no neighboring: moves to empty cell or use method */
 						
 						/* if complete breeding, leave a wolfat beginning of stavation and breeding period*/
-						// if move false, cannot breed
+						/* if move false, cannot breed */
 						/* if stavation: it dies */
 					
 						break;
-					case squirrel:: /*Squirrels never starve*/
-						//move()
-						// if move false, cannot breed
+					case squirrel: /*Squirrels never starve*/
+						/*move()
+						  if move false, cannot breed */
 						if(!world[i][j].breeding_period /*&& move true*/){
 							/*leave behind a squirel at the beginning of the breeding period*/
 							/*starts a new breeding period*/	
