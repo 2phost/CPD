@@ -44,9 +44,7 @@ struct world *move(entity_types e, int x, int y, int size){
 			break;
 		default:
 			return NULL;
-	}
-	/* If there are not Squirrels or Trees search for empty cells*/
-	
+	}	
 	
 	if(p>0){
 		cell_number = x*size + y;
