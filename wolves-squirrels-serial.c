@@ -68,6 +68,13 @@ int initWorld(int world_size){
 	return 0;
 }
 
+int copyWorldTo(struct world real_world[MAX][MAX], struct world fake_world[MAX][MAX]){
+
+	memcpy(fake_world, real_world, MAX*MAX*sizeof(struct world));
+
+	return 0;
+}
+
 int printWorld(int world_size){
 
 	int i, j;
@@ -162,6 +169,18 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 		 * If it's breeding period is 0, and he ate a squirrel, he creates an
 		 * heir, at his previous position, otherwise waits until he is able to
 		 * eat a squirrel to create the heir.
+		 
+		 * UPDATES (21-10-13):
+		 *	wolves only die after making number of moves equivalent to the starvation
+		 *	period (if they dont' eat a squirrel in the mean time). For example, if the
+		 *	starvation period is 1 and the number of generations is 1, the output should
+		 *	contain one wolf at the new position. This wolf would die here if there were
+		 *	more generations.
+		
+		 * For the wolves starvation instead of adding one starvation period per squirrel
+		 * eaten, it's starvation period should restart
+
+		 * DEPRECATED:
 		 * At each iteration the wolf starvation period decrements, if it reaches
 		 * 0 before the wolf is able to eat a squirrel, the wolf dies. But if he
 		 * is able to eat a squirrel, his starvation period restarts. */
@@ -171,31 +190,29 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 
 			if(move_motion != NULL){
 				
-				/* check if the wolf ate */				
-				ate = (move_motion->type == squirrel) ? 1 : 0;
+				/* if starvation : it dies */ /*DUVIDAS*/
+				if(world[x][y].starvation_period == 0)
+					clearWorldCell(&world[x][y]);
+				else{
+					/* check if the wolf ate */				
+					ate = (move_motion->type == squirrel) ? 1 : 0;
 
-				/* move wolf to new position and update it's periods */
-				move_motion->type = wolf;
-				move_motion->breeding_period = (world[x][y].breeding_period == 0) ? 0 : world[x][y].breeding_period-1;
-				move_motion->starvation_period = (ate ? w_starvation : world[x][y].starvation_period-1);
+					/* move wolf to new position and update it's periods */
+					move_motion->type = wolf;
+					move_motion->breeding_period = (world[x][y].breeding_period == 0) ? 0 : world[x][y].breeding_period-1;
+					move_motion->starvation_period = (ate ? w_starvation : world[x][y].starvation_period-1);
 
-				/* clear wolf's previous position */
-				clearWorldCell(&world[x][y]);
+					/* clear wolf's previous position */
+					clearWorldCell(&world[x][y]);
 
-				/* if complete breeding : leave a wolf at beginning of stavation and breeding period
-				 * otherwise : cannot breed */
-				if(ate && move_motion->breeding_period == 0)
-					makeBabies(wolf, &world[x][y], move_motion, w_breeding, w_starvation);
-
-				/* if stavation: it dies */ 					
-				killWolf(move_motion);
+					/* if complete breeding : leave a wolf at beginning of stavation and breeding period
+					 * otherwise : cannot breed */
+					if(ate && move_motion->breeding_period == 0)
+						makeBabies(wolf, &world[x][y], move_motion, w_breeding, w_starvation);
+				}
 
 			}else{
 				world[x][y].breeding_period = (world[x][y].breeding_period == 0) ? 0 : world[x][y].breeding_period-1;
-				world[x][y].starvation_period--;
-
-				/* if stavation: it dies */ 					
-				killWolf(&world[x][y]);
 			}
 
 			break;
@@ -206,7 +223,8 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
          * is previous position, otherwise waits until he is able to move
          * to create the heir.
          * Squirrels never starve. */
-		case squirrel: 
+		case squirrel:
+		case squirrel_on_tree:
 
 			move_motion = move(squirrel, x, y, world_size);
 

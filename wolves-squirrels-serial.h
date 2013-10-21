@@ -34,6 +34,9 @@ int initWorld(int world_size);
 /* Prints the content of the world, which corresponds to a square matriz of size world_size */
 int printWorld(int world_size);
 
+/* Copies the contents of the real world to the fake world */
+int copyWorldTo(struct world real_world[MAX][MAX], struct world fake_world[MAX][MAX]);
+
 /* Prints the contents of the world, according to the expected output format, which must correspond
  * to the input file format. */
 int printWorldFormatted(int world_size);
