@@ -34,6 +34,7 @@ struct world *move(entity_types e, int x, int y, int size){
 			}
 			break;
 		case squirrel:
+		case squirrel_on_tree:
 			/* Search for Trees */
 			if(x-1 >= 0 && (world[w_number][x-1][y].type == tree || world[w_number][x-1][y].type == empty))
 				pos[p++] = &world[d_world][x-1][y];
@@ -172,7 +173,15 @@ int killWolf(struct world* wolf){
 
 int clearWorldCell(struct world* cell){
 
-	cell->type = empty;
+	/*DEBUG*/
+	printf("nuking cell with... %c\n", cell->type); 
+	printf("reading[%d] - working[%d]\n", w_number, (w_number+1)%2);
+ 
+	if(cell->type != squirrel_on_tree)
+		cell->type = empty;
+	else
+		cell->type = tree;
+
 	cell->breeding_period = 0;
 	cell->starvation_period = 0;
 
@@ -199,7 +208,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 	struct world * move_motion = NULL;
 	int ate = 0;
 	int d_world = (w_number+1) % 2;
-
+	int sot = 0; /*DEBUG*/
 	switch(world[w_number][x][y].type){
 
 		/* At each iteration the wolf trie to move to a cell with a squirrel
@@ -240,8 +249,9 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 					move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
 					move_motion->starvation_period = (ate ? w_starvation : world[w_number][x][y].starvation_period-1);
 
-					/* clear wolf's previous position */
-					clearWorldCell(&world[w_number][x][y]);
+					/* DEPRECATED
+					 * clear wolf's previous position */
+					/*clearWorldCell(&world[d_world][x][y]);*/
 
 					/* if complete breeding : leave a wolf at beginning of stavation and breeding period
 					 * otherwise : cannot breed */
@@ -250,7 +260,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				}
 
 			}else{
-				world[w_number][x][y].breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
+				world[d_world][x][y].breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
 			}
 
 			break;
@@ -261,8 +271,10 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
          * is previous position, otherwise waits until he is able to move
          * to create the heir.
          * Squirrels never starve. */
-		case squirrel:
 		case squirrel_on_tree:
+			/*DEBUG*/
+			sot = 1;
+		case squirrel:
 
 			move_motion = move(squirrel, x, y, world_size);
 
@@ -272,14 +284,17 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
 				move_motion->starvation_period = 0;
 	
-				clearWorldCell(&world[d_world][x][y]);
+				/* DEPRECATED
+				 * * clear squirrels previous position 
+				 * clearWorldCell(&world[d_world][x][y]);*/
 		
 				/* if breeding period and moved : he leaves behing a squirrel at the beginning of the breeding period
 				 * otherwise: he cannot breed */
 				if(move_motion->breeding_period == 0)
 					makeBabies(squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);			
-			}else
-				world[d_world][x][y].breeding_period--;			
+			}else{
+				world[d_world][x][y].breeding_period--;
+			}
 			
 			/*Squirrels never starve*/
 			break;
