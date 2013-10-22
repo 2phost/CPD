@@ -313,7 +313,7 @@ int main(int argc, char **argv){
 	
 	w_number = 0;
 	
-	if(argc < 5){
+	if(argc <= 5){
 		printf("ERROR: Expected 5 arguments provided %d.\n", argc);
 		printf("Expected:\n./wolves-squirrels-serial <InputFile> <WolfBreedingPeriod> <SquirrelBreedingPeriod> <WolfStarvationPerior> <Generations>\n");	
 		return -1;
