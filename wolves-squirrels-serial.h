@@ -19,14 +19,9 @@ struct world {
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;
-} world[MAX][MAX];
+} world[2][MAX][MAX];
 
-typedef struct point * coord; 
-struct point{
-	int x;
-	int y;
-	int ate;
-};
+int w_number;
 
 /* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
 int initWorld(int world_size);
