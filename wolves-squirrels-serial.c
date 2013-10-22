@@ -2,6 +2,7 @@
 
 /* Move */
 struct world *move(entity_types e, int x, int y, int size){
+
 	int cell_number = 0;
 	int cell_select = 0;
 	int p = 0;
@@ -81,7 +82,7 @@ int cleanWorld(int world_size){
 			if(world[d_world][i][j].type == squirrel_on_tree)
 				world[d_world][i][j].type = tree;
 			if(world[d_world][i][j].type != tree && world[d_world][i][j].type != ice)
-				world[d_world][i][j].type = empty;
+				clearWorldCell(&world[d_world][i][j]);
 		}
 	printWorld(world_size);
 
@@ -104,6 +105,43 @@ int printWorld(int world_size){
 		}
 		printf("\n");
 	}
+
+	return 0;
+}
+
+int printWorldDetailed(int world_size){
+	int i, j;
+	int d_world = (w_number+1) % 2;
+
+	printf("=== printWorldDetailed ===\n");
+	printf("reading from world[%d] ...\n", w_number);
+	printf(" |");
+	for(j=0; j<world_size; j++)
+		printf(" %d     |", j);
+	printf("\n");
+
+	for(i=0; i < world_size; i++){
+		printf("%d|", i);
+		for(j=0; j< world_size; j++){
+			printf(" %c %d %d |", world[w_number][i][j].type, world[w_number][i][j].breeding_period, world[w_number][i][j].starvation_period);		
+		}
+		printf("\n");
+	}
+
+	printf("\n\nwriting to world[%d] ...\n", d_world);
+	printf(" |");
+	for(j=0; j<world_size; j++)
+		printf(" %d     |", j);
+	printf("\n");
+
+	for(i=0; i < world_size; i++){
+		printf("%d|", i);
+		for(j=0; j< world_size; j++){
+			printf(" %c %d %d |", world[d_world][i][j].type, world[d_world][i][j].breeding_period, world[d_world][i][j].starvation_period);		
+		}
+		printf("\n");
+	}
+	printf("==========================\n");
 
 	return 0;
 }
@@ -138,13 +176,13 @@ int clearWorldCell(struct world* cell){
 	cell->breeding_period = 0;
 	cell->starvation_period = 0;
 
-	return 1;
+	return 0;
 }
 
 
 
 int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_cell, int breeding_period, int starvation_period){
-	printf("GGIIIIIIIIIIIGGGGGGGGAAAAAAANNNNNNNNTTTTTTEEEEEEEE\n");
+	
 	/*Create Baby*/
 	prev_cell->type = type;
 	prev_cell->breeding_period = breeding_period;
@@ -229,6 +267,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			move_motion = move(squirrel, x, y, world_size);
 
 			if(move_motion != NULL){
+
 				move_motion->type = (move_motion->type == tree) ? squirrel_on_tree : squirrel;
 				move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
 				move_motion->starvation_period = 0;
@@ -258,7 +297,6 @@ int main(int argc, char **argv){
 	int i, j;	
 	int x, y, size;
 	int w_breeding, s_breeding, w_starvation, gen_num;
-	entity_types type = empty;
 	char type_code;
 	FILE * input_file;
 	
@@ -284,25 +322,26 @@ int main(int argc, char **argv){
 	fscanf(input_file, "%d", &size);
 	
 	initWorld(size);
-
 	
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
-		world[w_number][x][y].type = type_code;
+		world[0][x][y].type = type_code;
 		world[1][x][y].type = type_code;
-		if(world[w_number][x][y].type == wolf){
-			world[w_number][x][y].breeding_period = w_breeding;
-			world[w_number][x][y].starvation_period = w_starvation;
-		} else if(type == squirrel){
-			world[w_number][x][y].breeding_period = s_breeding;
+		if(world[0][x][y].type == wolf){
+			world[0][x][y].breeding_period = w_breeding;
+			world[0][x][y].starvation_period = w_starvation;
+		} else if(world[0][x][y].type == squirrel){
+			world[0][x][y].breeding_period = s_breeding;
 		}
 	}
+
+	
 	
 	fclose(input_file);
 	
 
 	/*DEBUG*/
-	printf("INITIAL WORLD\n");	
-	printWorld(size);
+	printf("INITIAL WORLD - w_number = %d\n", w_number);	
+	printWorldDetailed(size);
 	printf("\n");
 	
 	/* Generate */
@@ -325,8 +364,8 @@ int main(int argc, char **argv){
 
 
 		/*DEBUG*/
-		printf("Iteration %d:\n", gen_num);		
-		printWorld(size);
+		printf("\n\nIteration %d:\n", gen_num);		
+		printWorldDetailed(size);
 		printf("\n");
 
 		gen_num--;
