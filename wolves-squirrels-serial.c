@@ -173,15 +173,7 @@ int killWolf(struct world* wolf){
 
 int clearWorldCell(struct world* cell){
 
-	/*DEBUG*/
-	printf("nuking cell with... %c\n", cell->type); 
-	printf("reading[%d] - working[%d]\n", w_number, (w_number+1)%2);
- 
-	if(cell->type != squirrel_on_tree)
-		cell->type = empty;
-	else
-		cell->type = tree;
-
+	cell->type = empty;
 	cell->breeding_period = 0;
 	cell->starvation_period = 0;
 
@@ -260,7 +252,9 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				}
 
 			}else{
+				world[d_world][x][y].type = wolf;
 				world[d_world][x][y].breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
+				world[d_world][x][y].starvation_period = world[w_number][x][y].starvation_period;
 			}
 
 			break;
@@ -293,7 +287,9 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				if(move_motion->breeding_period == 0)
 					makeBabies(squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);			
 			}else{
-				world[d_world][x][y].breeding_period--;
+				world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
+				world[d_world][x][y].breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;;
+				world[d_world][x][y].starvation_period = 0;	
 			}
 			
 			/*Squirrels never starve*/
