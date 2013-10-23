@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "wolves-squirrels-serial.h"
 
 /* Move */
@@ -69,6 +70,14 @@ int initWorld(int world_size){
 			world[0][i][j].type = empty;
 			world[1][i][j].type = empty;
 		}
+
+	return 0;
+}
+
+int clearWorldCell(struct world* cell){
+	cell->type = empty;
+	cell->breeding_period = 0;
+	cell->starvation_period = 0;
 
 	return 0;
 }
@@ -163,24 +172,6 @@ int printWorldFormatted(int world_size){
 	return 0;
 }
 
-int killWolf(struct world* wolf){
-
-	if(wolf->starvation_period == 0)
-		clearWorldCell(wolf);
-
-	return 0;
-}
-
-int clearWorldCell(struct world* cell){
-
-	cell->type = empty;
-	cell->breeding_period = 0;
-	cell->starvation_period = 0;
-
-	return 0;
-}
-
-
 
 int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_cell, int breeding_period, int starvation_period){
 	
@@ -198,9 +189,8 @@ int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_ce
 int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size){
 	
 	struct world * move_motion = NULL;
-	int ate = 0;
 	int d_world = (w_number+1) % 2;
-	int sot = 0; /*DEBUG*/
+	int sot = 0, ate=0;
 	switch(world[w_number][x][y].type){
 
 		/* At each iteration the wolf trie to move to a cell with a squirrel
@@ -224,32 +214,60 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 		 * 0 before the wolf is able to eat a squirrel, the wolf dies. But if he
 		 * is able to eat a squirrel, his starvation period restarts. */
 		case wolf:
-			/* Updates breeding and starvation periods and moves the wolf*/
+
+			/* if starvation : it dies */
+			if(world[w_number][x][y].starvation_period == 0){
+				clearWorldCell(&world[w_number][x][y]);
+				break;
+			}
+			
 			move_motion = move(wolf, x, y, world_size);
 
 			if(move_motion != NULL){
 				
-				/* if starvation : it dies */ /*DUVIDAS*/
-				if(world[w_number][x][y].starvation_period == 0)
-					clearWorldCell(&world[d_world][x][y]);
-				else{
-					/* check if the wolf ate */				
-					ate = (move_motion->type == squirrel) ? 1 : 0;
+				/* Conflict Resolution */
+				switch(move_motion->type){
 
-					/* move wolf to new position and update it's periods */
-					move_motion->type = wolf;
-					move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
-					move_motion->starvation_period = (ate ? w_starvation : world[w_number][x][y].starvation_period-1);
+					/* case a wolf ends up in a cell with another wolf, the wolf farthest from startvation wins.
+					 * In case the starvation periods are equal, the wolf with the greatest breeding period wins. 
+					 *
+					 * TODO: IMPLEMENTACAO CONFUSA REVER */
+					case wolf:
+						if(move_motion->starvation_period > world[w_number][x][y].starvation_period){
+							/*Do nothing - the first wolf wins*/								
+							break;	
+						}else if(world[w_number][x][y].starvation_period > move_motion->starvation_period){
+							/* The second wolf wins */
+							move_motion->starvation_period = world[w_number][x][y].starvation_period;
+							move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
+						}else{
+							/*They tied on the first test*/
+							move_motion->breeding_period = 
+								world[w_number][x][y].breeding_period >= move_motion->breeding_period ?
+									world[w_number][x][y].breeding_period : move_motion->breeding_period;
+						}
+							
+						break;
 
-					/* DEPRECATED
-					 * clear wolf's previous position */
-					/*clearWorldCell(&world[d_world][x][y]);*/
+					/* case a wolf ends up in a cell with a squirrel, he eats the squirrel and it's
+					 * starvation period restarts. */
+					case squirrel:
+						ate = 1;
+						move_motion->type = wolf;
+						move_motion->starvation_period = w_starvation;
+						move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
+						break;
 
-					/* if complete breeding : leave a wolf at beginning of stavation and breeding period
-					 * otherwise : cannot breed */
-					if(ate && move_motion->breeding_period == 0)
-						makeBabies(wolf, &world[d_world][x][y], move_motion, w_breeding, w_starvation);
+					default:
+						move_motion->type = wolf;
+						move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
+						move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
 				}
+
+				/* if complete breeding : leave a wolf at beginning of stavation and breeding period
+				 * otherwise : cannot breed */
+				if(ate && move_motion->breeding_period == 0)
+					makeBabies(wolf, &world[d_world][x][y], move_motion, w_breeding, w_starvation);
 
 			}else{
 				world[d_world][x][y].type = wolf;
@@ -274,14 +292,32 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 
 			if(move_motion != NULL){
 
-				move_motion->type = (move_motion->type == tree) ? squirrel_on_tree : squirrel;
-				move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
-				move_motion->starvation_period = 0;
-	
-				/* DEPRECATED
-				 * * clear squirrels previous position 
-				 * clearWorldCell(&world[d_world][x][y]);*/
-		
+				/* Conflict Resolution */
+				switch(move_motion->type){
+					/* case a squirrels ends up in a tree, he becomes a squirrel_on_tree. */
+					case tree:
+						move_motion->type = squirrel_on_tree;
+						move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
+						move_motion->starvation_period = 0;
+						break;
+					/* case two squirrels end up in the same cell, the squirrel with the biggest
+					 * breeding period wins. */
+					case squirrel: 
+						move_motion->breeding_period = 
+							world[w_number][x][y].breeding_period >= move_motion->breeding_period ? 
+								world[w_number][x][y].breeding_period : move_motion->breeding_period;
+						break;
+					/* case a squirrel ends up in a cell with a wolf, the dies and the wolf's
+					 * starvation period restarts. */
+					case wolf:
+						move_motion->starvation_period = w_starvation;
+						break;										
+					default:
+						move_motion->type = squirrel;
+						move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
+						move_motion->starvation_period = 0;
+				}
+				
 				/* if breeding period and moved : he leaves behing a squirrel at the beginning of the breeding period
 				 * otherwise: he cannot breed */
 				if(move_motion->breeding_period == 0)

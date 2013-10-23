@@ -1,11 +1,21 @@
+================================================================================================================
 BUG 23-10-13 00:00 (5)
-STATUS: identificado
+STATUS: resolvido - deve ser testado
 
 Assumpções: breeding_period do w e do s é 1.
 0|   | w | -> 0|    |    |
 1| s |   |    1| s2 | s1 |
 
 Não há qualquer tipo de gestão de conflitos implementado, como tal o lobo é "consumido" pela chegada do esquilo.
+
+SOLUCAO:
+Implementado mecanismo de resolucao de conflito, de acordo com as regras do enunciado. Estes consistem em dois
+switch's, um para o wolf outro para o squirrel, que basicamente verificam se a célula para a qual a entidade se
+está a mover, já possui alguma outra entidade lá dentro. Assim e dependendo do tipo de entidade que se encontra
+na célula são aplicadas as regras de conflito.
+
+NOTA:
+a regra de resolucao wolf-wolf é muito confusa e precisa de ser revista.
 
 ================================================================================================================
 BUG 22-10-13 23:20 (4)
