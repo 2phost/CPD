@@ -229,7 +229,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				switch(move_motion->type){
 
 					/* case a wolf ends up in a cell with another wolf, the wolf farthest from startvation wins.
-					 * In case the starvation periods are equal, the wolf with the greatest breeding period wins. 
+					 * In case the starvation periods are equal, the wolf with the lowest breeding period wins. 
 					 *
 					 * TODO: IMPLEMENTACAO CONFUSA REVER */
 					case wolf:
@@ -243,7 +243,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 						}else{
 							/*They tied on the first test*/
 							move_motion->breeding_period = 
-								world[w_number][x][y].breeding_period >= move_motion->breeding_period ?
+								world[w_number][x][y].breeding_period <= move_motion->breeding_period ?
 									world[w_number][x][y].breeding_period : move_motion->breeding_period;
 						}
 							
@@ -272,7 +272,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			}else{
 				world[d_world][x][y].type = wolf;
 				world[d_world][x][y].breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
-				world[d_world][x][y].starvation_period = world[w_number][x][y].starvation_period;
+				world[d_world][x][y].starvation_period = world[w_number][x][y].starvation_period-1;
 			}
 
 			break;
@@ -284,7 +284,6 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
          * to create the heir.
          * Squirrels never starve. */
 		case squirrel_on_tree:
-			/*DEBUG*/
 			sot = 1;
 		case squirrel:
 
@@ -300,11 +299,11 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 						move_motion->breeding_period = (world[w_number][x][y].breeding_period == 0) ? 0 : world[w_number][x][y].breeding_period-1;
 						move_motion->starvation_period = 0;
 						break;
-					/* case two squirrels end up in the same cell, the squirrel with the biggest
+					/* case two squirrels end up in the same cell, the squirrel with the lowest
 					 * breeding period wins. */
 					case squirrel: 
 						move_motion->breeding_period = 
-							world[w_number][x][y].breeding_period >= move_motion->breeding_period ? 
+							world[w_number][x][y].breeding_period <= move_motion->breeding_period ? 
 								world[w_number][x][y].breeding_period : move_motion->breeding_period;
 						break;
 					/* case a squirrel ends up in a cell with a wolf, the dies and the wolf's
