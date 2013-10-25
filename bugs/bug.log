@@ -1,3 +1,13 @@
+BUG 25-10-13 17:30 (6)
+Status: identificado
+
+Assumpções: s_breeding > 1
+0|   | $ | -> 0| s | $ |
+1| i | i |    1| i | i |
+
+Neste cenário um squirrel_on_tree, quando abandona a tree, esta não fica como tree mas como squirrel_on_tree, na
+mesma.
+
 ================================================================================================================
 BUG 23-10-13 00:00 (5)
 STATUS: resolvido - deve ser testado
