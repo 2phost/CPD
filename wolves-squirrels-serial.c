@@ -87,10 +87,6 @@ int cleanWorld(int world_size){
 	int i, j;
 	int d_world = (w_number+1)%2;
 
-	/*DEBUG*/
-	printf("Getting ready to swap worlds...\n");
-	printf("... cleaning world %d\n ...", d_world);
-
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			if(world[d_world][i][j].type == squirrel_on_tree)
@@ -98,9 +94,6 @@ int cleanWorld(int world_size){
 			if(world[d_world][i][j].type != tree && world[d_world][i][j].type != ice)
 				clearWorldCell(&world[d_world][i][j]);
 		}
-
-		/*DEBUG*/
-	printf("... the new world has been cleaned!\n");
 
 	return 0;
 }
@@ -181,9 +174,6 @@ int printWorldFormatted(int world_size){
 
 int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_cell, int breeding_period, int starvation_period){
 	
-	/*DEBUG*/
-	printf("New baby in... 3... 2... 1... !!!\n");
-
 	/*Create Baby*/
 	prev_cell->type = type;
 	prev_cell->breeding_period = breeding_period;
@@ -410,10 +400,11 @@ int main(int argc, char **argv){
 	fclose(input_file);
 	
 
-	/*DEBUG*/
+#ifdef VERBOSE
 	printf("INITIAL WORLD - w_number = %d\n", w_number);	
 	printWorldDetailed(size);
 	printf("\n");
+#endif
 	
 	/* Generate */
 	while(gen_num != 0){
@@ -434,10 +425,11 @@ int main(int argc, char **argv){
 		}
 
 
-		/*DEBUG*/
+#ifdef VERBOSE
 		printf("\n\nIteration %d:\n", gen_num);		
 		printWorldDetailed(size);
 		printf("\n");
+#endif
 
 		gen_num--;
 		w_number = (w_number+1) % 2;
