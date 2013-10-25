@@ -1,5 +1,6 @@
+================================================================================================================
 BUG 25-10-13 17:30 (6)
-Status: identificado
+Status: resolvido
 
 Assumpções: s_breeding > 1
 0|   | $ | -> 0| s | $ |
@@ -7,6 +8,11 @@ Assumpções: s_breeding > 1
 
 Neste cenário um squirrel_on_tree, quando abandona a tree, esta não fica como tree mas como squirrel_on_tree, na
 mesma.
+
+SOLUCAO:
+A inicializacao das matrizes não contemplava a existência de uma entidade do tipo squirrel_on_tree, pelo que esta
+era sempre inicializada com breeding_period 0. O erro neste cenário era causado por um filho do primeiro esquilo.
+Para resolver este problema foi adicionado um OR no ciclo de inicializacao das matrizes com o squirrel_on_tree.
 
 ================================================================================================================
 BUG 23-10-13 00:00 (5)

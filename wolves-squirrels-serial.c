@@ -87,6 +87,10 @@ int cleanWorld(int world_size){
 	int i, j;
 	int d_world = (w_number+1)%2;
 
+	/*DEBUG*/
+	printf("Getting ready to swap worlds...\n");
+	printf("... cleaning world %d\n ...", d_world);
+
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			if(world[d_world][i][j].type == squirrel_on_tree)
@@ -94,7 +98,9 @@ int cleanWorld(int world_size){
 			if(world[d_world][i][j].type != tree && world[d_world][i][j].type != ice)
 				clearWorldCell(&world[d_world][i][j]);
 		}
-	printWorld(world_size);
+
+		/*DEBUG*/
+	printf("... the new world has been cleaned!\n");
 
 	return 0;
 }
@@ -175,6 +181,9 @@ int printWorldFormatted(int world_size){
 
 int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_cell, int breeding_period, int starvation_period){
 	
+	/*DEBUG*/
+	printf("New baby in... 3... 2... 1... !!!\n");
+
 	/*Create Baby*/
 	prev_cell->type = type;
 	prev_cell->breeding_period = breeding_period;
@@ -376,7 +385,7 @@ int main(int argc, char **argv){
 		if(world[0][x][y].type == wolf){
 			world[0][x][y].breeding_period = w_breeding;
 			world[0][x][y].starvation_period = w_starvation;
-		} else if(world[0][x][y].type == squirrel){
+		} else if(world[0][x][y].type == squirrel || world[0][x][y].type == squirrel_on_tree){
 			world[0][x][y].breeding_period = s_breeding;
 		}
 	}
