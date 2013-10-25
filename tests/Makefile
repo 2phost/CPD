@@ -1,8 +1,13 @@
 all:
 	cd .. && $(MAKE)
 
+test-sqrl-simple-move:
+	../wolves-squirrels-serial.out test-squirrel-simple-move.in 1 3 1 1 > out.out
+	diff out.out test-squirrel-simple-move.out
+	rm out.out
+
 test-sqrl-invalid-move:
-	../wolves-squirrels-serial.out test-sqrl-invalid-move.in 1 1 1 3
+	../wolves-squirrels-serial.out test-sqrl-invalid-move.in 1 1 1 3 > out.out
 
 test-sqrl-simple-breed:
 	../wolves-squirrels-serial.out test-sqrl-simple-breed.in 1 3 1 3
