@@ -1,0 +1,17 @@
+==========================================================================
+Generic Tests:
+
+(1) test-static-scene: 
+verifica se os objectos estáticos do cenários (ice e trees) não se movem
+independentemente do número de iterações.
+
+==========================================================================
+Squirrel Tests:
+
+(2) test-sqrl-simple-move:
+verifica se um squirrel consegue realizar um movimento simples e se o
+realiza de forma determinístico.
+
+==========================================================================
+Wolf Tests:
+==========================================================================

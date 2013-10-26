@@ -208,12 +208,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 		 *	more generations.
 		
 		 * For the wolves starvation instead of adding one starvation period per squirrel
-		 * eaten, it's starvation period should restart
-
-		 * DEPRECATED:
-		 * At each iteration the wolf starvation period decrements, if it reaches
-		 * 0 before the wolf is able to eat a squirrel, the wolf dies. But if he
-		 * is able to eat a squirrel, his starvation period restarts. */
+		 * eaten, it's starvation period should restart */
 		case wolf:
 
 			/* if starvation : it dies */
@@ -245,22 +240,6 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 							move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
 							move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
 						} /* The original wolf has a bigger starvation level, and nothing needs to change */
-
-						/* ORIGINAL CODE
-						if(move_motion->starvation_period > world[w_number][x][y].starvation_period){
-							COMMENT Do nothing - the first wolf wins
-							break;	
-						}else if(world[w_number][x][y].starvation_period > move_motion->starvation_period){
-							COMMENT The second wolf wins 
-							move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
-							move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
-						}else{
-							COMMENT They tied on the first test
-							move_motion->breeding_period = 
-								world[w_number][x][y].breeding_period <= move_motion->breeding_period ?
-									world[w_number][x][y].breeding_period-1 : move_motion->breeding_period-1;
-						}
-						*/
 							
 						break;
 
