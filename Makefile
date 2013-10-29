@@ -1,13 +1,10 @@
-all:
+serial:
 	gcc -c -ansi -pedantic -Wall wolves-squirrels-serial.h wolves-squirrels-serial.c
-	gcc wolves-squirrels-serial.o -o wolves-squirrels-serial.out
+	gcc wolves-squirrels-serial.o -o wolves-squirrels.out
 
-verbose:
+serial-verbose:
 	gcc -c -ansi -pedantic -Wall -DVERBOSE=1 wolves-squirrels-serial.h wolves-squirrels-serial.c
-	gcc wolves-squirrels-serial.o -o wolves-squirrels-serial.out
-
-run-test:
-	./wolves-squirrels-serial.out a.in 1 1 1 1
+	gcc wolves-squirrels-serial.o -o wolves-squirrels.out
 
 clean:
-	rm wolves-squirrels-serial.o wolves-squirrels-serial.out wolves-squirrels-serial.h.gch
+	rm wolves-squirrels-serial.o wolves-squirrels.out wolves-squirrels-serial.h.gch
