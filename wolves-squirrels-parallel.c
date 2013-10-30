@@ -6,7 +6,7 @@ void init_lock_matrix(int size){
 
 	int i=0, j=0;
 
-#pragma omp parallel for
+#pragma omp parallel for private(j)
 	for(i=0; i< size; i++)
 		for(j=0; j< size; j++)
 			omp_init_lock(&lock_matrix[i][j]);
@@ -77,7 +77,7 @@ int initWorld(int world_size){
 	int i, j;
 
 
-#pragma omp parallel for
+#pragma omp parallel for private(j)
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			world[0][i][j].coord.x=i;
@@ -104,7 +104,7 @@ int cleanWorld(int world_size){
 	int i, j;
 	int d_world = (w_number+1)%2;
 
-#pragma omp parallel for
+#pragma omp parallel for private(j)
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			if(world[d_world][i][j].type == squirrel_on_tree)
@@ -425,13 +425,13 @@ int main(int argc, char **argv){
 		cleanWorld(size); /*PARALLEL*/
 
 
-#pragma omp parallel sections
+#pragma omp parallel sections private(i)
 {		
-
+	
 	/* 1st sub-generation - RED */
 	#pragma omp section
 	{
-		#pragma omp parallel for
+		#pragma omp parallel for private(j)
 		for(i=0; i<size; i++){
 			for(j = i%2 == 0 ? 0 : 1 ; j<size; j+=2){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
@@ -443,7 +443,7 @@ int main(int argc, char **argv){
 	/* 2nd sub-generation */
 	#pragma omp section
 	{
-		#pragma omp parallel for
+		#pragma omp parallel for private(j)
 		for(i=0; i<size; i++){
 			for(j = i%2 == 0 ? 1 : 0 ; j<size; j+=2){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
