@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MAX 50
+#define MAX 1000
 
 enum entity {
 	wolf='w',

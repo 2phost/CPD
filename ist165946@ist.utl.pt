@@ -1,15 +1,14 @@
 #include <stdlib.h>
-#include "wolves-squirrels-parallel.h"
+#include "wolves-squirrels-serial.h"
 
 
 void init_lock_matrix(int size){
 
 	int i=0, j=0;
 
-#pragma omp parallel for
-	for(i=0; i< size; i++)
-		for(j=0; j< size; j++)
-			omp_init_lock(&lock_matrix[i][j]);
+	for(i=0; i<=size; i++)
+		for(j=0; j<=size; j++)
+			omp_init_lock(lock_matrix[i][j]);
 }
 
 /* Move */
@@ -76,14 +75,9 @@ int initWorld(int world_size){
 	
 	int i, j;
 
-
 #pragma omp parallel for
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
-			world[0][i][j].coord.x=i;
-			world[0][i][j].coord.y=j;
-			world[1][i][j].coord.x=i;
-			world[1][i][j].coord.y=j;
 			world[0][i][j].type = empty;
 			world[1][i][j].type = empty;
 		}
@@ -230,9 +224,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 
 			/* if starvation : it dies */
 			if(world[w_number][x][y].starvation_period == 0){
-				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
 				clearWorldCell(&world[w_number][x][y]);
-				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
 				break;
 			}
 			
@@ -241,7 +233,6 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			if(move_motion != NULL){
 				
 				/* Conflict Resolution */
-				omp_set_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]);
 				switch(move_motion->type){
 
 					/* case a wolf ends up in a cell with another wolf, the wolf farthest from startvation wins.
@@ -278,20 +269,15 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 						move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
 				}
 
-				omp_unset_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]);
-
 				/* if complete breeding : leave a wolf at beginning of stavation and breeding period
 				 * otherwise : cannot breed */
 				if(ate && move_motion->breeding_period <= 0)
 					makeBabies(wolf, &world[d_world][x][y], move_motion, w_breeding, w_starvation);
 
-
 			}else{
-				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
 				world[d_world][x][y].type = wolf;
 				world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;
 				world[d_world][x][y].starvation_period = world[w_number][x][y].starvation_period-1;
-				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
 			}
 
 			break;
@@ -311,7 +297,6 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			if(move_motion != NULL){
 
 				/* Conflict Resolution */
-				omp_set_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]);
 				switch(move_motion->type){
 					/* case a squirrels ends up in a tree, he becomes a squirrel_on_tree. */
 					case tree:
@@ -336,19 +321,15 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
 						move_motion->starvation_period = 0;
 				}
-
-				omp_unset_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]);
 				
 				/* if breeding period is 0 or lower : he leaves behing a squirrel at the beginning of the breeding period
 				 * otherwise: he cannot breed */
 				if(move_motion->breeding_period <= 0)
 					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);			
 			}else{
-				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
 				world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
 				world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;;
-				world[d_world][x][y].starvation_period = 0;
-				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
+				world[d_world][x][y].starvation_period = 0;	
 			}
 			
 			/*Squirrels never starve*/
@@ -393,14 +374,8 @@ int main(int argc, char **argv){
 	
 	omp_set_num_threads(4);
 
-#pragma omp parallel sections
-{
-	#pragma omp section
-		initWorld(size); /*PARALLEL*/
-
-	#pragma omp section
-		init_lock_matrix(size);	/*PARALLEL*/
-}
+	initWorld(size); /*PARALLEL*/
+	
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
 		world[0][x][y].type = type_code;
 		world[1][x][y].type = type_code;

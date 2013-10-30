@@ -2,6 +2,9 @@ serial:
 	gcc -c -ansi -pedantic -Wall wolves-squirrels-serial.h wolves-squirrels-serial.c
 	gcc wolves-squirrels-serial.o -o wolves-squirrels.out
 
+parallel:
+	gcc -o wolves-squirrels.out -fopenmp wolves-squirrels-parallel.c wolves-squirrels-parallel.h
+
 serial-verbose:
 	gcc -c -ansi -pedantic -Wall -DVERBOSE=1 wolves-squirrels-serial.h wolves-squirrels-serial.c
 	gcc wolves-squirrels-serial.o -o wolves-squirrels.out

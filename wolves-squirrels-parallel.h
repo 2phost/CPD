@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <omp.h>
 
-#define MAX 50
+#define MAX 1000
 
 enum entity {
 	wolf='w',
@@ -15,11 +16,19 @@ enum entity {
 
 typedef enum entity entity_types;
 
+struct point {
+	int x;
+	int y;
+};
+
 struct world {
+	struct point coord;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;
 } world[2][MAX][MAX];
+
+omp_lock_t lock_matrix[MAX][MAX];
 
 int w_number;
 
