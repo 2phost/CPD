@@ -230,9 +230,6 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 
 			/* if starvation : it dies */
 			if(world[w_number][x][y].starvation_period == 0){
-				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
-				clearWorldCell(&world[w_number][x][y]);
-				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
 				break;
 			}
 			
