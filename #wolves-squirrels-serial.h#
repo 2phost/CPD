@@ -19,15 +19,16 @@ struct point {
 	int x;
 	int y;
 };
+struct point {
+
 
 struct world {
-	entity_types conflicts[5];
 	struct point coord;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;
 	int breed; /* indicates if the entity can breed */
-} world[MAX][MAX];
+} world[2][MAX][MAX];
 
 int w_number;
 

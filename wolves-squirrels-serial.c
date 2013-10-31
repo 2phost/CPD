@@ -69,12 +69,12 @@ int initWorld(int world_size){
 
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
-			world[0][i][j].coord.x=i;
-			world[0][i][j].coord.y=j;
-			world[1][i][j].coord.x=i;
-			world[1][i][j].coord.y=j;
-			world[0][i][j].type = empty;
-			world[1][i][j].type = empty;
+			world[i][j].coord.x=i;
+			world[i][j].coord.y=j;
+			world[i][j].coord.x=i;
+			world[i][j].coord.y=j;
+			world[i][j].type = empty;
+			world[i][j].type = empty;
 		}
 
 	return 0;
