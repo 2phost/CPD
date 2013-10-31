@@ -23,6 +23,7 @@ struct point {
 
 struct world {
 	struct point coord;
+	struct point prev_coord;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;

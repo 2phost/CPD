@@ -15,7 +15,14 @@ enum entity {
 
 typedef enum entity entity_types;
 
+struct point {
+	int x;
+	int y;
+};
+
 struct world {
+	struct point coord;
+	struct point prev_coord;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;

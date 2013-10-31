@@ -256,6 +256,8 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 						move_motion->type = wolf;
 						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
 						move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
+						move_motion->prev_coord.x = x;
+						move_motion->prev_coord.y = y;
 				}
 
 				/* if complete breeding : leave a wolf at beginning of stavation and breeding period
@@ -304,6 +306,8 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 					 * starvation period restarts. */
 					case wolf:
 						move_motion->starvation_period = w_starvation;
+						if(move_motion->breeding_period <= 0)
+							makeBabies(wolf, &world[d_world][move_motion->prev_coord.x][move_motion->prev_coord.y], move_motion, w_breeding, w_starvation);
 						break;										
 					default:
 						move_motion->type = squirrel;
@@ -314,7 +318,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				/* if breeding period is 0 or lower : he leaves behing a squirrel at the beginning of the breeding period
 				 * otherwise: he cannot breed */
 				if(move_motion->breeding_period <= 0)
-					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);			
+					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);
 			}else{
 				world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
 				world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;;

@@ -6,7 +6,7 @@ void init_lock_matrix(int size){
 
 	int i=0, j=0;
 
-#pragma omp parallel for private(j)
+#pragma omp parallel for private(i, j)
 	for(i=0; i< size; i++)
 		for(j=0; j< size; j++)
 			omp_init_lock(&lock_matrix[i][j]);
@@ -23,6 +23,7 @@ struct world *move(entity_types e, int x, int y, int size){
 
 	/* Search */
 	switch(world[w_number][x][y].type){
+
 		case wolf:
 			/* Search for Squirrels */
 			if(x-1 >= 0 && world[w_number][x-1][y].type == squirrel)
@@ -45,6 +46,7 @@ struct world *move(entity_types e, int x, int y, int size){
 					pos[p++] = &world[d_world][x][y-1];
 			}
 			break;
+
 		case squirrel:
 		case squirrel_on_tree:
 			/* Search for Trees */
@@ -76,8 +78,7 @@ int initWorld(int world_size){
 	
 	int i, j;
 
-
-#pragma omp parallel for private(j)
+#pragma omp parallel for private(i, j)
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			world[0][i][j].coord.x=i;
@@ -104,7 +105,7 @@ int cleanWorld(int world_size){
 	int i, j;
 	int d_world = (w_number+1)%2;
 
-#pragma omp parallel for private(j)
+#pragma omp parallel for private(i, j)
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			if(world[d_world][i][j].type == squirrel_on_tree)
@@ -192,6 +193,7 @@ int printWorldFormatted(int world_size){
 
 int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_cell, int breeding_period, int starvation_period){
 	
+	
 	/*Create Baby*/
 	prev_cell->type = type;
 	prev_cell->breeding_period = breeding_period;
@@ -230,9 +232,9 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 
 			/* if starvation : it dies */
 			if(world[w_number][x][y].starvation_period == 0){
-				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
+				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]); /*LOCK*/
 				clearWorldCell(&world[w_number][x][y]);
-				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
+				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]); /*UNLOCK*/
 				break;
 			}
 			
@@ -241,7 +243,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			if(move_motion != NULL){
 				
 				/* Conflict Resolution */
-				omp_set_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]);
+				omp_set_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]); /*LOCK*/
 				switch(move_motion->type){
 
 					/* case a wolf ends up in a cell with another wolf, the wolf farthest from startvation wins.
@@ -256,6 +258,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 							move_motion->breeding_period = 
 								world[w_number][x][y].breeding_period <= move_motion->breeding_period ?
 									world[w_number][x][y].breeding_period-1 : move_motion->breeding_period-1;						
+	
 						}else if(starv > 0){ /* The moving wolf has a bigger starvation level and wins */
 							move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
 							move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
@@ -276,14 +279,18 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 						move_motion->type = wolf;
 						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
 						move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
+						
+						move_motion->prev_coord.x = x;
+						move_motion->prev_coord.y = y;
 				}
 
-				omp_unset_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]);
+				omp_unset_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]); /*UNLOCK*/
 
 				/* if complete breeding : leave a wolf at beginning of stavation and breeding period
 				 * otherwise : cannot breed */
 				if(ate && move_motion->breeding_period <= 0)
 					makeBabies(wolf, &world[d_world][x][y], move_motion, w_breeding, w_starvation);
+
 
 
 			}else{
@@ -311,7 +318,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			if(move_motion != NULL){
 
 				/* Conflict Resolution */
-				omp_set_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]);
+				omp_set_lock(&lock_matrix[move_motion->coord.x][move_motion->coord.y]); /*LOCK*/
 				switch(move_motion->type){
 					/* case a squirrels ends up in a tree, he becomes a squirrel_on_tree. */
 					case tree:
@@ -330,6 +337,9 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 					 * starvation period restarts. */
 					case wolf:
 						move_motion->starvation_period = w_starvation;
+						if(move_motion->breeding_period <= 0)
+							makeBabies(wolf, &world[d_world][move_motion->prev_coord.x][move_motion->prev_coord.y], move_motion, w_breeding, w_starvation);
+
 						break;										
 					default:
 						move_motion->type = squirrel;
@@ -342,13 +352,13 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				/* if breeding period is 0 or lower : he leaves behing a squirrel at the beginning of the breeding period
 				 * otherwise: he cannot breed */
 				if(move_motion->breeding_period <= 0)
-					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);			
+					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);
 			}else{
-				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
+				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]); /*LOCK*/
 				world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
 				world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;;
 				world[d_world][x][y].starvation_period = 0;
-				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]);
+				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]); /*UNLOCK*/
 			}
 			
 			/*Squirrels never starve*/
@@ -423,15 +433,12 @@ int main(int argc, char **argv){
 	/* Generate */
 	while(gen_num != 0){
 		cleanWorld(size); /*PARALLEL*/
-
-
-#pragma omp parallel sections private(i)
-{		
-	
-	/* 1st sub-generation - RED */
+#pragma omp parallel sections
+{
 	#pragma omp section
 	{
-		#pragma omp parallel for private(j)
+		/* 1st sub-generation - RED */
+		#pragma omp parallel for private(i, j)
 		for(i=0; i<size; i++){
 			for(j = i%2 == 0 ? 0 : 1 ; j<size; j+=2){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
@@ -439,11 +446,10 @@ int main(int argc, char **argv){
 		}
 	}
 
-
-	/* 2nd sub-generation */
 	#pragma omp section
 	{
-		#pragma omp parallel for private(j)
+		/* 2nd sub-generation */
+		#pragma omp parallel for private(i, j)
 		for(i=0; i<size; i++){
 			for(j = i%2 == 0 ? 1 : 0 ; j<size; j+=2){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
@@ -451,7 +457,6 @@ int main(int argc, char **argv){
 		}
 	}
 }
-
 
 #ifdef VERBOSE
 		printf("\n\nIteration %d:\n", gen_num);		
