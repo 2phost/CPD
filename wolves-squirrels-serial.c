@@ -83,6 +83,7 @@ int initWorld(int world_size){
 int clearWorldCell(struct world* cell){
 	cell->type = empty;
 	cell->breeding_period = 0;
+	cell->breeding_conflict = global_wolf_breeding_period;
 	cell->starvation_period = 0;
 	cell->breed = 0;
 	return 0;
@@ -170,7 +171,7 @@ int printWorldFormatted(int world_size){
 	for(i=0; i < world_size; i++){
 		for(j=0; j < world_size; j++){
 			if(world[w_number][i][j].type != empty)			
-				printf("%d %d %c %d %d\n", i, j, world[w_number][i][j].type, world[w_number][i][j].breeding_period, world[w_number][i][j].starvation_period);	
+				printf("%d %d %c %d %d %d\n", i, j, world[w_number][i][j].type, world[w_number][i][j].breeding_period, world[w_number][i][j].starvation_period, world[w_number][i][j].breed);
 		}
 	}
 
@@ -192,6 +193,8 @@ int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_ce
 			}else{
 				prev_cell->starvation_period = starvation_period;
 				prev_cell->breed = prev_cell->breeding_period <= 0 ? 1 : 0; 
+				/* Restart entity breeding period */
+				curr_cell->breeding_period = breeding_period;
 			}
 			break;
 
@@ -268,7 +271,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 
 						/* starv is the difference between the starvation levels of the moving wolf, and the
 						 * wolf already on the cell */
-						if(world[w_number][move_motion->coord.x][move_motion->coord.y].type==squirrel)
+						if(move_motion->starvation_period == w_starvation)
 							starv = 0;
 						else
 							starv = (world[w_number][x][y].starvation_period-1) - move_motion->starvation_period;
@@ -277,10 +280,11 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 							move_motion->breeding_period = 
 								(world[w_number][x][y].breeding_period-1) <= move_motion->breeding_period ?
 									world[w_number][x][y].breeding_period-1 : move_motion->breeding_period;						
-	
+							move_motion->breed = move_motion->breeding_period <= 0 ? 1 : 0;	
 						}else if(starv > 0){ /* The moving wolf has a bigger starvation level and wins */
 							move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
 							move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
+							move_motion->breed = move_motion->breeding_period <= 0 ? 1 : 0;
 						} /* The original wolf has a bigger starvation level, and nothing needs to change */
 							
 						break;
@@ -290,8 +294,8 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 					case squirrel:
 						move_motion->type = wolf;
 						move_motion->starvation_period = w_starvation;
-						move_motion->breed = move_motion->breeding_period <= 0 ? 1 : 0;	
-						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
+						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;						
+						move_motion->breed = move_motion->breeding_period <= 0 ? 1 : 0;
 						break;
 
 					default:
@@ -367,6 +371,10 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 					world[d_world][x][y].starvation_period = 0;
 				}else{
 					world[d_world][x][y].starvation_period = w_starvation;
+					if(world[d_world][x][y].breeding_conflict != global_wolf_breeding_period)
+						world[d_world][x][y].breeding_period = world[d_world][x][y].breeding_conflict < world[d_world][x][y].breeding_period ?
+							world[d_world][x][y].breeding_conflict : world[d_world][x][y].breeding_period;
+					world[d_world][x][y].breed = world[d_world][x][y].breeding_period <= 0 ? 1 : 0;
 				}
 			}
 			
@@ -397,9 +405,9 @@ int main(int argc, char **argv){
 		return -1;
     }
 
-	w_breeding = atoi(argv[2]);
-	s_breeding = atoi(argv[3]);
-	w_starvation = atoi(argv[4]);
+	global_wolf_breeding_period = w_breeding = atoi(argv[2]);
+	global_squirrel_breeding_period = s_breeding = atoi(argv[3]);
+	global_wolf_breeding_period = w_starvation = atoi(argv[4]);
 	gen_num = atoi(argv[5]);
 	
 	input_file = fopen(argv[1], "r");

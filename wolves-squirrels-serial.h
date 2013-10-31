@@ -4,6 +4,10 @@
 
 #define MAX 1000
 
+int global_wolf_breeding_period;
+int global_squirrel_breeding_period;
+int global_wolf_starvation_period;
+
 enum entity {
 	wolf='w',
 	squirrel='s',
@@ -24,6 +28,7 @@ struct world {
 	struct point coord;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
+	int breeding_conflict;
 	int starvation_period;
 	int breed; /* indicates if the entity can breed */
 } world[2][MAX][MAX];
