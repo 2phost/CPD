@@ -293,7 +293,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 						
 						if(starv == 0){ /* Their starvation levels is tied */
 							move_motion->breeding_period = 
-								world[w_number][x][y].breeding_period <= move_motion->breeding_period ?
+								(world[w_number][x][y].breeding_period-1) <= move_motion->breeding_period ?
 									world[w_number][x][y].breeding_period-1 : move_motion->breeding_period;
 											
 	
@@ -358,8 +358,8 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 					 * breeding period wins. */
 					case squirrel: 
 						move_motion->breeding_period = 
-							world[w_number][x][y].breeding_period <= move_motion->breeding_period ? 
-								world[w_number][x][y].breeding_period-1 : move_motion->breeding_period-1;
+							(world[w_number][x][y].breeding_period-1) <= move_motion->breeding_period ? 
+								world[w_number][x][y].breeding_period-1 : move_motion->breeding_period;
 						break;
 					/* case a squirrel ends up in a cell with a wolf, he dies and the wolf's
 					 * starvation period restarts. */
