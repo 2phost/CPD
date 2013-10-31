@@ -231,12 +231,8 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 		case wolf:
 
 			/* if starvation : it dies */
-			if(world[w_number][x][y].starvation_period == 0){
-				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]); /*LOCK*/
-				clearWorldCell(&world[w_number][x][y]);
-				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]); /*UNLOCK*/
+			if(world[w_number][x][y].starvation_period == 0)
 				break;
-			}
 			
 			move_motion = move(wolf, x, y, world_size);
 
