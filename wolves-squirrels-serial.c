@@ -65,15 +65,14 @@ struct world *move(entity_types e, int x, int y, int size){
 
 int initWorld(int world_size){
 	
-	int i, j;
+	int i, j, z;
 
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
+			for(z=0; z < 5; z++)
+				world[i][j].conflicts[z]=NULL;
 			world[i][j].coord.x=i;
 			world[i][j].coord.y=j;
-			world[i][j].coord.x=i;
-			world[i][j].coord.y=j;
-			world[i][j].type = empty;
 			world[i][j].type = empty;
 		}
 
@@ -84,22 +83,6 @@ int clearWorldCell(struct world* cell){
 	cell->type = empty;
 	cell->breeding_period = 0;
 	cell->starvation_period = 0;
-
-	return 0;
-}
-
-int cleanWorld(int world_size){
-	
-	int i, j;
-	int d_world = (w_number+1)%2;
-
-	for(i=0; i < world_size; i++)
-		for(j=0; j < world_size; j++){
-			if(world[d_world][i][j].type == squirrel_on_tree)
-				world[d_world][i][j].type = tree;
-			if(world[d_world][i][j].type != tree && world[d_world][i][j].type != ice)
-				clearWorldCell(&world[d_world][i][j]);
-		}
 
 	return 0;
 }
@@ -386,8 +369,6 @@ int main(int argc, char **argv){
 	char type_code;
 	FILE * input_file;
 	
-	w_number = 0;
-	
 	if(argc <= 5){
 		printf("ERROR: Expected 5 arguments provided %d.\n", argc);
 		printf("Expected:\n./wolves-squirrels-serial <InputFile> <WolfBreedingPeriod> <SquirrelBreedingPeriod> <WolfStarvationPerior> <Generations>\n");	
@@ -410,13 +391,12 @@ int main(int argc, char **argv){
 	initWorld(size);
 
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
-		world[0][x][y].type = type_code;
-		world[1][x][y].type = type_code;
-		if(world[0][x][y].type == wolf){
-			world[0][x][y].breeding_period = w_breeding;
-			world[0][x][y].starvation_period = w_starvation;
-		} else if(world[0][x][y].type == squirrel || world[0][x][y].type == squirrel_on_tree){
-			world[0][x][y].breeding_period = s_breeding;
+		world[x][y].type = type_code;
+		if(world[x][y].type == wolf){
+			world[x][y].breeding_period = w_breeding;
+			world[x][y].starvation_period = w_starvation;
+		} else if(world[x][y].type == squirrel){
+			world[x][y].breeding_period = s_breeding;
 		}
 	}
 	
@@ -430,7 +410,6 @@ int main(int argc, char **argv){
 	
 	/* Generate */
 	while(gen_num != 0){
-		cleanWorld(size);
 
 		/* 1st sub-generation - RED */
 		for(i=0; i<size; i++){
