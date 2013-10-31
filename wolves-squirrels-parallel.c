@@ -351,9 +351,13 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);
 			}else{
 				omp_set_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]); /*LOCK*/
-				world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
-				world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;;
-				world[d_world][x][y].starvation_period = 0;
+
+				if(world[d_world][x][y].type != wolf){				
+					world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
+					world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;;
+					world[d_world][x][y].starvation_period = 0;
+				}
+
 				omp_unset_lock(&lock_matrix[world[d_world][x][y].coord.x][world[d_world][x][y].coord.y]); /*UNLOCK*/
 			}
 			

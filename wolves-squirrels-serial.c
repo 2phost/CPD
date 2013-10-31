@@ -320,9 +320,11 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				if(move_motion->breeding_period <= 0)
 					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, 0);
 			}else{
-				world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
-				world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;;
-				world[d_world][x][y].starvation_period = 0;	
+				if(world[d_world][x][y].type != wolf){
+					world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
+					world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;;
+					world[d_world][x][y].starvation_period = 0;	
+				}
 			}
 			
 			/*Squirrels never starve*/
