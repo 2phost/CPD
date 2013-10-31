@@ -22,10 +22,10 @@ struct point {
 
 struct world {
 	struct point coord;
-	struct point prev_coord;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;
+	int breed; /* indicates if the entity can breed */
 } world[2][MAX][MAX];
 
 int w_number;
