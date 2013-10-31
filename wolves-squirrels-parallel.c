@@ -217,8 +217,8 @@ int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_ce
 			prev_cell->starvation_period = starvation_period;
 			prev_cell->breed = 0;
 			/* Restart entity breeding period */
-			//curr_cell->breeding_period = breeding_period;
-			//curr_cell->breed = 0;
+			curr_cell->breeding_period = breeding_period;
+			curr_cell->breed = 0;
 			break;
 
 		case squirrel_on_tree:
