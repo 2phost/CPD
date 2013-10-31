@@ -416,6 +416,13 @@ int fixWorld(int size, int w_starvation){
 					break;
 				
 			}
+			
+			/* Free */
+			aux=0;
+			while(aux < world[x][y].count){
+				free(world[x][y].conflicts[aux]);
+				aux++;
+			}
 			world[x][y].count = 0;
 		}
 	}
