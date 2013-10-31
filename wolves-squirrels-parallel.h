@@ -1,7 +1,8 @@
+#include <omp.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <omp.h>
+
 
 #define MAX 1000
 
@@ -13,7 +14,6 @@ enum entity {
 	tree='t',
 	empty=' '
 };
-
 typedef enum entity entity_types;
 
 struct point {
@@ -21,17 +21,23 @@ struct point {
 	int y;
 };
 
+struct conflicts {
+	entity_types type;
+	int breeding_period;
+	int starvation_period;
+};
+typedef struct conflicts conflict; 
+
 struct world {
+	conflict *conflicts[5];
+	omp_lock_t lock_count;
+	int count;
 	struct point coord;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;
-	int breed; /* indicates if the entity can breed */
-} world[2][MAX][MAX];
-
-omp_lock_t lock_matrix[MAX][MAX];
-
-int w_number;
+	int breed;  /*indicates if the entity can breed */
+} world[MAX][MAX];
 
 /* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
 int initWorld(int world_size);
@@ -61,6 +67,3 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 /* Given the entity previous position and it's current position, creates an heir at the previous position
    with the specified breeding and starvation periods, and restarts the entity's breeding period */
 int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_cell, int breeding_period, int starvation_period);
-
-/**/
-struct world *move(entity_types e, int x, int y, int size);

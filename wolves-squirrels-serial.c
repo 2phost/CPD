@@ -285,6 +285,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				if(sot){
 					world[x][y].conflicts[world[x][y].count] = (conflict*)malloc(sizeof(struct conflicts));
 					world[x][y].conflicts[world[x][y].count]->type = tree;
+					world[x][y].count +=1;
 				}
 				
 				/* if breeding period is 0 or lower : he leaves behing a squirrel at the beginning of the breeding period
@@ -474,8 +475,7 @@ int main(int argc, char **argv){
 		printWorld(size);
 		printf("\n");
 #endif
-		printWorld(size);
-		printf("\n\n");
+
 		gen_num--;
 	}
 	
