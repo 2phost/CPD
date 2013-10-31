@@ -74,6 +74,7 @@ int initWorld(int world_size){
 			world[i][j].coord.y=j;
 			world[i][j].type = empty;
 			world[i][j].breed = 0;
+			world[i][j].count=0;
 		}
 
 	return 0;
@@ -99,7 +100,7 @@ int printWorld(int world_size){
 	for(i=0; i < world_size; i++){
 		printf("%d|", i);
 		for(j=0; j< world_size; j++){
-			printf(" %c |", world[w_number][i][j].type);		
+			printf(" %c |", world[i][j].type);		
 		}
 		printf("\n");
 	}
@@ -109,10 +110,8 @@ int printWorld(int world_size){
 
 int printWorldDetailed(int world_size){
 	int i, j;
-	int d_world = (w_number+1) % 2;
 
 	printf("=== printWorldDetailed ===\n");
-	printf("reading from world[%d] ...\n", w_number);
 	printf(" |");
 	for(j=0; j<world_size; j++)
 		printf(" %d     |", j);
@@ -121,12 +120,11 @@ int printWorldDetailed(int world_size){
 	for(i=0; i < world_size; i++){
 		printf("%d|", i);
 		for(j=0; j< world_size; j++){
-			printf(" %c %d %d |", world[w_number][i][j].type, world[w_number][i][j].breeding_period, world[w_number][i][j].starvation_period);		
+			printf(" %c %d %d |", world[i][j].type, world[i][j].breeding_period, world[i][j].starvation_period);		
 		}
 		printf("\n");
 	}
 
-	printf("\n\nwriting to world[%d] ...\n", d_world);
 	printf(" |");
 	for(j=0; j<world_size; j++)
 		printf(" %d     |", j);
@@ -135,7 +133,7 @@ int printWorldDetailed(int world_size){
 	for(i=0; i < world_size; i++){
 		printf("%d|", i);
 		for(j=0; j< world_size; j++){
-			printf(" %c %d %d |", world[d_world][i][j].type, world[d_world][i][j].breeding_period, world[d_world][i][j].starvation_period);		
+			printf(" %c %d %d |", world[i][j].type, world[i][j].breeding_period, world[i][j].starvation_period);		
 		}
 		printf("\n");
 	}
@@ -152,8 +150,8 @@ int printWorldFormatted(int world_size){
 	
 	for(i=0; i < world_size; i++){
 		for(j=0; j < world_size; j++){
-			if(world[w_number][i][j].type != empty)			
-				printf("%d %d %c %d %d\n", i, j, world[w_number][i][j].type, world[w_number][i][j].breeding_period, world[w_number][i][j].starvation_period);	
+			if(world[i][j].type != empty)			
+				printf("%d %d %c %d %d\n", i, j, world[i][j].type, world[i][j].breeding_period, world[i][j].starvation_period);	
 		}
 	}
 
@@ -230,7 +228,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 		case wolf:
 
 			/* if starvation : it dies */
-			if(world[w_number][x][y].starvation_period == 0){
+			if(world[x][y].starvation_period == 0){
 				/*TODO clean cell*/
 				break;
 			}
@@ -243,49 +241,18 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				/*if(world[x][y].breed)
 					makeBabies(wolf, &world[x][y], move_motion, w_breeding, w_starvation);*/
 
-				/* Conflict Resolution TODO*/
-				/*switch(move_motion->type){
-
-					/* case a wolf ends up in a cell with another wolf, the wolf farthest from startvation wins.
-					 * In case the starvation periods are equal, the wolf with the lowest breeding period wins. 
-					case wolf:
-
-						/* starv is the difference between the starvation levels of the moving wolf, and the
-						 * wolf already on the cell 
-						starv = (world[w_number][x][y].starvation_period-1) - move_motion->starvation_period;
-						
-						if(starv == 0){ /* Their starvation levels is tied 
-							move_motion->breeding_period = 
-								world[w_number][x][y].breeding_period <= move_motion->breeding_period ?
-									world[w_number][x][y].breeding_period-1 : move_motion->breeding_period;						
-	
-						}else if(starv > 0){ /* The moving wolf has a bigger starvation level and wins 
-							move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
-							move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
-						} /* The original wolf has a bigger starvation level, and nothing needs to change 
-							
-						break;
-
-					/* case a wolf ends up in a cell with a squirrel, he eats the squirrel and it's
-					 * starvation period restarts. 
-					case squirrel:
-						move_motion->type = wolf;
-						move_motion->starvation_period = w_starvation;
-						move_motion->breed = move_motion->breeding_period <= 0 ? 1 : 0;	
-						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
-						break;
-
-					default:
-						move_motion->type = wolf;
-						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
-						move_motion->starvation_period = world[w_number][x][y].starvation_period-1;
-				}
-			*/
-			}else{
+				move_motion->conflicts[move_motion->count] = (conflict*)malloc(sizeof(struct conflicts));
+				move_motion->conflicts[move_motion->count]->type = wolf;
+				move_motion->conflicts[move_motion->count]->breeding_period = world[x][y].breeding_period-1;
+				move_motion->conflicts[move_motion->count]->starvation_period = world[x][y].starvation_period-1;
+				move_motion->count += 1;
 				
-				/*world[d_world][x][y].type = wolf;
-				world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;
-				world[d_world][x][y].starvation_period = world[w_number][x][y].starvation_period-1;*/
+			}else{
+				world[x][y].conflicts[world[x][y].count] = (conflict*)malloc(sizeof(struct conflicts));
+				world[x][y].conflicts[world[x][y].count]->type = wolf;
+				world[x][y].conflicts[world[x][y].count]->breeding_period = world[x][y].breeding_period-1;
+				world[x][y].conflicts[world[x][y].count]->starvation_period = world[x][y].starvation_period-1;
+				world[x][y].count += 1;
 			}
 			
 
@@ -304,53 +271,25 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			move_motion = move(squirrel, x, y, world_size);
 
 			if(move_motion != NULL){
-
-				/* Conflict Resolution */
-				switch(move_motion->type){
-					/* case a squirrels ends up in a tree, he becomes a squirrel_on_tree. */
-					case tree:
-						move_motion->type = squirrel_on_tree;
-						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
-						move_motion->starvation_period = 0;
-						break;
-					/* case two squirrels end up in the same cell, the squirrel with the lowest
-					 * breeding period wins. */
-					case squirrel: 
-						move_motion->breeding_period = 
-							world[w_number][x][y].breeding_period <= move_motion->breeding_period ? 
-								world[w_number][x][y].breeding_period-1 : move_motion->breeding_period-1;
-						break;
-					/* case a squirrel ends up in a cell with a wolf, he dies and the wolf's
-					 * starvation period restarts. */
-					case wolf:
-						if(move_motion->starvation_period > 0){
-							move_motion->starvation_period = w_starvation;
-							if(move_motion->breeding_period < 0)
-								move_motion->breed = 1;
-					
-						}
+				move_motion->conflicts[move_motion->count] = (conflict*)malloc(sizeof(struct conflicts));
+				move_motion->conflicts[move_motion->count]->type = squirrel;
+				move_motion->conflicts[move_motion->count]->breeding_period = world[x][y].breeding_period-1;
+				move_motion->conflicts[move_motion->count]->starvation_period = 0;
+				move_motion->count += 1;
 						
-						break;
+				
 
-					default:
-						move_motion->type = squirrel;
-						move_motion->breeding_period = world[w_number][x][y].breeding_period-1;
-						move_motion->starvation_period = 0;
-				}
-
-				/* if breeding period is 0 or lower : he leaves behing a squirrel at the beginning of the breeding period
-				 * otherwise: he cannot breed */
+				/* TODO if breeding period is 0 or lower : he leaves behing a squirrel at the beginning of the breeding period
+				 * otherwise: he cannot breed 
 				if(move_motion->type != wolf && move_motion->breeding_period <= 0)
-					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, w_starvation);
+					makeBabies(sot ? squirrel_on_tree: squirrel, &world[d_world][x][y], move_motion, s_breeding, w_starvation);*/
 
 			}else{
-				if(world[d_world][x][y].type != wolf){				
-					world[d_world][x][y].type = sot ? squirrel_on_tree : squirrel;
-					world[d_world][x][y].breeding_period = world[w_number][x][y].breeding_period-1;;
-					world[d_world][x][y].starvation_period = 0;
-				}else{
-					world[d_world][x][y].starvation_period = w_starvation;
-				}
+				world[x][y].conflicts[world[x][y].count] = (conflict*)malloc(sizeof(struct conflicts));
+				world[x][y].conflicts[world[x][y].count]->type = sot ? squirrel_on_tree : squirrel;
+				world[x][y].conflicts[world[x][y].count]->breeding_period = world[x][y].breeding_period-1;
+				world[x][y].conflicts[world[x][y].count]->starvation_period = 0;
+				world[x][y].count += 1;
 			}
 			
 			/*Squirrels never starve*/
@@ -363,6 +302,10 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 	return 0;
 }
 
+int fixWorld(int size){
+
+	return 0;
+}
 
 int main(int argc, char **argv){
 
@@ -427,6 +370,8 @@ int main(int argc, char **argv){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
 			}
 		}
+		
+		fixWorld(size);
 
 
 #ifdef VERBOSE
@@ -436,7 +381,6 @@ int main(int argc, char **argv){
 #endif
 
 		gen_num--;
-		w_number = (w_number+1) % 2;
 	}
 	
 	/* Output */

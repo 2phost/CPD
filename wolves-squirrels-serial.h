@@ -12,7 +12,6 @@ enum entity {
 	tree='t',
 	empty=' '
 };
-
 typedef enum entity entity_types;
 
 struct point {
@@ -20,8 +19,16 @@ struct point {
 	int y;
 };
 
+struct conflicts {
+	entity_types type;
+	int breeding_period;
+	int starvation_period;
+};
+typedef struct conflicts conflict; 
+
 struct world {
-	entity_types conflicts[5];
+	conflict *conflicts[5];
+	int count;
 	struct point coord;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
