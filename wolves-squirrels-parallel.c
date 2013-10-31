@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "wolves-squirrels-parallel.h"
 
+int generation_zero = 0;
 
 void init_lock_matrix(int size){
 
@@ -93,9 +94,11 @@ int initWorld(int world_size){
 }
 
 int clearWorldCell(struct world* cell){
+
 	cell->type = empty;
 	cell->breeding_period = 0;
 	cell->starvation_period = 0;
+	cell->breed = 0;
 
 	return 0;
 }
@@ -283,7 +286,10 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 					case wolf:
 						/* starv is the difference between the starvation levels of the moving wolf, and the
 						 * wolf already on the cell */
-						starv = (world[w_number][x][y].starvation_period-1) - move_motion->starvation_period;
+						if(world[w_number][move_motion->coord.x][move_motion->coord.y].type==squirrel)
+							starv = 0;
+						else
+							starv = (world[w_number][x][y].starvation_period-1) - move_motion->starvation_period;
 						
 						if(starv == 0){ /* Their starvation levels is tied */
 							move_motion->breeding_period = 
@@ -499,6 +505,7 @@ int main(int argc, char **argv){
 #endif
 
 		gen_num--;
+		generation_zero = gen_num;
 		w_number = (w_number+1) % 2;
 	}
 	

@@ -3,7 +3,7 @@ serial:
 	gcc wolves-squirrels-serial.o -o wolves-squirrels.out
 
 parallel:
-	gcc -o wolves-squirrels.out -fopenmp wolves-squirrels-parallel.c wolves-squirrels-parallel.h
+	gcc -o wolves-squirrels-parallel.out -fopenmp wolves-squirrels-parallel.c wolves-squirrels-parallel.h
 
 parallel-v:
 	gcc -o wolves-squirrels.out -DVERBOSE=1 -fopenmp wolves-squirrels-parallel.c wolves-squirrels-parallel.h
