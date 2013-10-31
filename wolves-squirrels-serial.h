@@ -26,7 +26,7 @@ struct world {
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;
-	/*int breed;  indicates if the entity can breed */
+	int breed;  /*indicates if the entity can breed */
 } world[MAX][MAX];
 
 /* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
