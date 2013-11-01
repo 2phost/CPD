@@ -1,13 +1,12 @@
-#include <omp.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define MAX 1000
-#define NUM_THREADS omp_get_num_threads()
 
-double start=0.0; 
-double end=0.0;
+clock_t start;
+clock_t end;
 
 enum entity {
 	wolf='w',
@@ -19,6 +18,11 @@ enum entity {
 };
 typedef enum entity entity_types;
 
+struct point {
+	int x;
+	int y;
+};
+
 struct conflicts {
 	entity_types type;
 	int breeding_period;
@@ -28,7 +32,6 @@ typedef struct conflicts conflict;
 
 struct world {
 	conflict *conflicts[5];
-	omp_lock_t lock_count;
 	int count;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
@@ -38,6 +41,9 @@ struct world {
 
 /* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
 int initWorld(int world_size);
+
+/* Prints the content of the world, which corresponds to a square matriz of size world_size */
+int printWorld(int world_size);
 
 /* Prints the contents of the world, according to the expected output format, which must correspond
  * to the input file format. */

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "wolves-squirrels-parallel.h"
+#include "wolves-squirrels-serial.h"
 
 /* Move */
 struct world *move(entity_types e, int x, int y, int size){
@@ -65,8 +65,7 @@ struct world *move(entity_types e, int x, int y, int size){
 int initWorld(int world_size){
 	
 	int i, j, z;
-	
-	#pragma omp parallel for private(i, j, z) schedule(dynamic, world_size/(NUM_THREADS*2))
+
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			for(z=0; z < 5; z++)
@@ -74,7 +73,6 @@ int initWorld(int world_size){
 			world[i][j].type = empty;
 			world[i][j].breed = 0;
 			world[i][j].count=0;
-			omp_init_lock(&(world[i][j].lock_count));
 		}
 
 	return 0;
@@ -131,32 +129,26 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				
 				/* If pregnant? */
 				if(world[x][y].breed){
-					omp_set_lock(&(world[x][y].lock_count));
 					world[x][y].conflicts[world[x][y].count] = (conflict*)malloc(sizeof(struct conflicts));
 					world[x][y].conflicts[world[x][y].count]->type = wolf;
 					world[x][y].conflicts[world[x][y].count]->breeding_period = w_breeding;
 					world[x][y].conflicts[world[x][y].count]->starvation_period = w_starvation;
 					world[x][y].count += 1;
-					omp_unset_lock(&(world[x][y].lock_count));
 				}
-				
-				omp_set_lock(&(move_motion->lock_count));
+								
 				move_motion->conflicts[move_motion->count] = (conflict*)malloc(sizeof(struct conflicts));
 				move_motion->conflicts[move_motion->count]->type = wolf;
 				move_motion->conflicts[move_motion->count]->breeding_period = world[x][y].breed ? w_breeding : world[x][y].breeding_period-1;
 				move_motion->conflicts[move_motion->count]->starvation_period = world[x][y].starvation_period-1;
 				move_motion->count += 1;
 				world[x][y].breed=0;
-				omp_unset_lock(&(move_motion->lock_count));
 				
 			}else{
-				omp_set_lock(&(world[x][y].lock_count));
 				world[x][y].conflicts[world[x][y].count] = (conflict*)malloc(sizeof(struct conflicts));
 				world[x][y].conflicts[world[x][y].count]->type = wolf;
 				world[x][y].conflicts[world[x][y].count]->breeding_period = world[x][y].breeding_period-1;
 				world[x][y].conflicts[world[x][y].count]->starvation_period = world[x][y].starvation_period-1;
 				world[x][y].count += 1;
-				omp_unset_lock(&(world[x][y].lock_count));
 			}
 			
 
@@ -179,42 +171,32 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				/* if breeding period is 0 or lower : he leaves behing a squirrel at the beginning of the breeding period
 				 * otherwise: he cannot breed */
 				if(world[x][y].breeding_period <= 0){
-					omp_set_lock(&(world[x][y].lock_count));
 					world[x][y].conflicts[world[x][y].count] = (conflict*)malloc(sizeof(struct conflicts));
 					world[x][y].conflicts[world[x][y].count]->type = squirrel;
 					world[x][y].conflicts[world[x][y].count]->breeding_period = s_breeding;
 					world[x][y].conflicts[world[x][y].count]->starvation_period = 0;
 					world[x][y].count += 1;
 					sot = 0;
-					omp_unset_lock(&(world[x][y].lock_count));
 				}
 
-				omp_set_lock(&(move_motion->lock_count));
 				move_motion->conflicts[move_motion->count] = (conflict*)malloc(sizeof(struct conflicts));
 				move_motion->conflicts[move_motion->count]->type = squirrel;
 				move_motion->conflicts[move_motion->count]->breeding_period = world[x][y].breeding_period <= 0 ? s_breeding : world[x][y].breeding_period-1;
 				move_motion->conflicts[move_motion->count]->starvation_period = 0;
 				move_motion->count += 1;
-				omp_unset_lock(&(move_motion->lock_count));
 				
 				if(sot){
-					omp_set_lock(&(world[x][y].lock_count));
 					world[x][y].conflicts[world[x][y].count] = (conflict*)malloc(sizeof(struct conflicts));
 					world[x][y].conflicts[world[x][y].count]->type = tree;
 					world[x][y].count +=1;
-					omp_unset_lock(&(world[x][y].lock_count));
 				}
-				
-				
 
 			}else{
-				omp_set_lock(&(world[x][y].lock_count));
 				world[x][y].conflicts[world[x][y].count] = (conflict*)malloc(sizeof(struct conflicts));
 				world[x][y].conflicts[world[x][y].count]->type = sot ? squirrel_on_tree : squirrel;
 				world[x][y].conflicts[world[x][y].count]->breeding_period = world[x][y].breeding_period-1;
 				world[x][y].conflicts[world[x][y].count]->starvation_period = 0;
 				world[x][y].count += 1;
-				omp_unset_lock(&(world[x][y].lock_count));
 			}
 			
 			/*Squirrels never starve*/
@@ -233,7 +215,6 @@ int fixWorld(int size, int w_starvation, int w_breeding){
 	int ate;
 	int lowest_breeding;
 	
-#pragma omp parallel for private(x, y, ate, aux, lowest_breeding) schedule(dynamic, size/(NUM_THREADS*2))
 	for(x=0; x<size; x++){
 		for(y=0 ; y<size; y++){
 			if(world[x][y].type == ice || (world[x][y].type == tree && world[x][y].count == 0))
@@ -390,43 +371,31 @@ int main(int argc, char **argv){
 	fclose(input_file);
 
 #ifdef VERBOSE
-	start = omp_get_wtime();
-#endif	
-
+	start = clock();
+#endif
+	
 	/* Generate */
 	while(gen_num != 0){
-#pragma omp parallel sections
-{
-	#pragma omp section
-	{
 		/* 1st sub-generation - RED */
-		#pragma omp parallel for private(i, j) schedule(dynamic, size/(NUM_THREADS*2))
 		for(i=0; i<size; i++){
 			for(j = i%2 == 0 ? 0 : 1 ; j<size; j+=2){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
 			}		
 		}
-	}
-		
-	#pragma omp section
-	{
 		/* 2nd sub-generation */
-		#pragma omp parallel for private(i, j) schedule(dynamic, size/(NUM_THREADS*2))
 		for(i=0; i<size; i++){
 			for(j = i%2 == 0 ? 1 : 0 ; j<size; j+=2){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
 			}
 		}
-	}
-}
 		fixWorld(size, w_starvation, w_breeding);
 
 		gen_num--;
 	}
 
 #ifdef VERBOSE
-	end = omp_get_wtime();
-	printf("Elapsed time: %lf\n", end-start); 
+	end = clock();
+	printf("Elapsed Time : %lf\n", (double)(end-start) / CLOCKS_PER_SEC);
 #endif
 	
 	/* Output */
