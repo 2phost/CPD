@@ -71,21 +71,11 @@ int initWorld(int world_size){
 		for(j=0; j < world_size; j++){
 			for(z=0; z < 5; z++)
 				world[i][j].conflicts[z]=NULL;
-			world[i][j].coord.x=i;
-			world[i][j].coord.y=j;
 			world[i][j].type = empty;
 			world[i][j].breed = 0;
 			world[i][j].count=0;
 			omp_init_lock(&(world[i][j].lock_count));
 		}
-
-	return 0;
-}
-
-int clearWorldCell(struct world* cell){
-	cell->type = empty;
-	cell->breeding_period = 0;
-	cell->starvation_period = 0;
 
 	return 0;
 }
@@ -155,51 +145,6 @@ int printWorldFormatted(int world_size){
 			if(world[i][j].type != empty)			
 				printf("%d %d %c %d %d\n", i, j, world[i][j].type, world[i][j].breeding_period, world[i][j].starvation_period);	
 		}
-	}
-
-	return 0;
-}
-
-
-int makeBabies(entity_types type, struct world* prev_cell, struct world* curr_cell, int breeding_period, int starvation_period){
-	
-	switch(type){
-		case squirrel:
-			if(prev_cell->type != wolf){
-				/*Create Baby*/
-				prev_cell->type = squirrel;
-				prev_cell->breeding_period = breeding_period;
-				prev_cell->starvation_period = 0;
-				/* Restart entity breeding period */
-				curr_cell->breeding_period = breeding_period;
-			}else{
-				prev_cell->starvation_period = starvation_period;
-				prev_cell->breed = prev_cell->breeding_period <= 0 ? 1 : 0; 
-			}
-			break;
-
-		case wolf:
-			/*Create Baby*/
-			prev_cell->type = wolf;
-			prev_cell->breeding_period = breeding_period;
-			prev_cell->starvation_period = starvation_period;
-			prev_cell->breed = 0;
-			/* Restart entity breeding period */
-			curr_cell->breeding_period = breeding_period;
-			curr_cell->breed = 0;
-			break;
-
-		case squirrel_on_tree:
-			/*Create Baby*/
-			prev_cell->type = squirrel_on_tree;
-			prev_cell->breeding_period = breeding_period;
-			prev_cell->starvation_period = 0;
-			/* Restart entity breeding period */
-			curr_cell->breeding_period = breeding_period;
-			break;
-
-		default:
-			break;
 	}
 
 	return 0;
@@ -338,6 +283,7 @@ int fixWorld(int size, int w_starvation){
 	int aux;
 	int ate;
 	
+	#pragma parallel for private(x,y,aux,ate)
 	for(x=0; x<size; x++){
 		for(y=0 ; y<size; y++){
 			if(world[x][y].type == ice || (world[x][y].type == tree && world[x][y].count == 0))
