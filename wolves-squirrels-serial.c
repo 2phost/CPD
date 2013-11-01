@@ -78,60 +78,6 @@ int initWorld(int world_size){
 	return 0;
 }
 
-int printWorld(int world_size){
-
-	int i, j;
-
-    printf(" |");
-	for(j=0; j<world_size; j++)
-		printf(" %d |", j);
-	printf("\n");
-
-	for(i=0; i < world_size; i++){
-		printf("%d|", i);
-		for(j=0; j< world_size; j++){
-			printf(" %c |", world[i][j].type);		
-		}
-		printf("\n");
-	}
-
-	return 0;
-}
-
-int printWorldDetailed(int world_size){
-	int i, j;
-
-	printf("=== printWorldDetailed ===\n");
-	printf(" |");
-	for(j=0; j<world_size; j++)
-		printf(" %d     |", j);
-	printf("\n");
-
-	for(i=0; i < world_size; i++){
-		printf("%d|", i);
-		for(j=0; j< world_size; j++){
-			printf(" %c %d %d |", world[i][j].type, world[i][j].breeding_period, world[i][j].starvation_period);		
-		}
-		printf("\n");
-	}
-
-	printf(" |");
-	for(j=0; j<world_size; j++)
-		printf(" %d     |", j);
-	printf("\n");
-
-	for(i=0; i < world_size; i++){
-		printf("%d|", i);
-		for(j=0; j< world_size; j++){
-			printf(" %c %d %d |", world[i][j].type, world[i][j].breeding_period, world[i][j].starvation_period);		
-		}
-		printf("\n");
-	}
-	printf("==========================\n");
-
-	return 0;
-}
-
 int printWorldFormatted(int world_size){
 
 	int i, j;
@@ -425,9 +371,7 @@ int main(int argc, char **argv){
 	fclose(input_file);
 
 #ifdef VERBOSE
-	printf("INITIAL WORLD - w_number = %d\n", w_number);	
-	printWorldDetailed(size);
-	printf("\n");
+	start = clock();
 #endif
 	
 	/* Generate */
@@ -446,15 +390,13 @@ int main(int argc, char **argv){
 		}
 		fixWorld(size, w_starvation, w_breeding);
 
-
-#ifdef VERBOSE
-		printf("\n\nIteration %d:\n", gen_num);		
-		printWorld(size);
-		printf("\n");
-#endif
-
 		gen_num--;
 	}
+
+#ifdef VERBOSE
+	end = clock();
+	printf("Elapsed Time : %lf\n", (double)(end-start) / CLOCKS_PER_SEC);
+#endif
 	
 	/* Output */
 	printWorldFormatted(size);

@@ -1,6 +1,8 @@
-serial:
-	gcc -c wolves-squirrels-serial.h wolves-squirrels-serial.c
-	gcc wolves-squirrels-serial.o -o wolves-squirrels-s.out
+serial-v:
+	gcc -c -DVERBOSE=1 wolves-squirrels-serial.h wolves-squirrels-serial.c
+	gcc wolves-squirrels-serial.o -o wolves-squirrels-serial.out
+	./wolves-squirrels-serial.out prof-test/world_1000.in 20 50 30 10000 > serial.out
+	cat serial.out | grep Elapsed
 
 parallel:
 	gcc -o wolves-squirrels-p.out -fopenmp wolves-squirrels-parallel.c wolves-squirrels-parallel.h
@@ -8,9 +10,19 @@ parallel:
 parallel-v:
 	gcc -o wolves-squirrels.out -DVERBOSE=1 -fopenmp wolves-squirrels-parallel.c wolves-squirrels-parallel.h
 
-serial-verbose:
-	gcc -c -ansi -pedantic -Wall -DVERBOSE=1 wolves-squirrels-serial.h wolves-squirrels-serial.c
-	gcc wolves-squirrels-serial.o -o wolves-squirrels.out
+dynamic-v:
+	gcc -o wolves-squirrels-dynamic.out -DVERBOSE=1 -fopenmp wolves-squirrels-parallel-dynamic.c wolves-squirrels-parallel.h
+	./wolves-squirrels-dynamic.out prof-test/world_1000.in 20 50 30 10000 > dynamic.out
+	cat dynamic.out | grep Elapsed
+guided-v:
+	gcc -o wolves-squirrels-guided.out -DVERBOSE=1 -fopenmp wolves-squirrels-parallel-guided.c wolves-squirrels-parallel.h
+	./wolves-squirrels-guided.out prof-test/world_1000.in 20 50 30 10000 > guided.out
+	cat guided.out | grep Elapsed
+
+static-v:
+	gcc -o wolves-squirrels-static.out -DVERBOSE=1 -fopenmp wolves-squirrels-parallel-static.c wolves-squirrels-parallel.h
+	./wolves-squirrels-static.out prof-test/world_1000.in 20 50 30 10000 > static.out
+	cat static.out | grep Elapsed
 
 test1:
 	make serial
@@ -48,4 +60,4 @@ test5:
 	diff 1.out 2.out
 	
 clean:
-	rm wolves-squirrels-serial.o wolves-squirrels.out wolves-squirrels-serial.h.gch
+	rm wolves-squirrels-serial.o wolves-squirrels.out wolves-squirrels-serial.h.gch *.out

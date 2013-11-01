@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define MAX 1000
+
+clock_t start;
+clock_t end;
 
 enum entity {
 	wolf='w',

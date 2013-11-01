@@ -66,7 +66,7 @@ int initWorld(int world_size){
 	
 	int i, j, z;
 	
-	#pragma omp parallel for private(i, j, z)
+	#pragma omp parallel for private(i, j, z) schedule(dynamic)
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			for(z=0; z < 5; z++)
@@ -76,60 +76,6 @@ int initWorld(int world_size){
 			world[i][j].count=0;
 			omp_init_lock(&(world[i][j].lock_count));
 		}
-
-	return 0;
-}
-
-int printWorld(int world_size){
-
-	int i, j;
-
-    printf(" |");
-	for(j=0; j<world_size; j++)
-		printf(" %d |", j);
-	printf("\n");
-
-	for(i=0; i < world_size; i++){
-		printf("%d|", i);
-		for(j=0; j< world_size; j++){
-			printf(" %c |", world[i][j].type);		
-		}
-		printf("\n");
-	}
-
-	return 0;
-}
-
-int printWorldDetailed(int world_size){
-	int i, j;
-
-	printf("=== printWorldDetailed ===\n");
-	printf(" |");
-	for(j=0; j<world_size; j++)
-		printf(" %d     |", j);
-	printf("\n");
-
-	for(i=0; i < world_size; i++){
-		printf("%d|", i);
-		for(j=0; j< world_size; j++){
-			printf(" %c %d %d |", world[i][j].type, world[i][j].breeding_period, world[i][j].starvation_period);		
-		}
-		printf("\n");
-	}
-
-	printf(" |");
-	for(j=0; j<world_size; j++)
-		printf(" %d     |", j);
-	printf("\n");
-
-	for(i=0; i < world_size; i++){
-		printf("%d|", i);
-		for(j=0; j< world_size; j++){
-			printf(" %c %d %d |", world[i][j].type, world[i][j].breeding_period, world[i][j].starvation_period);		
-		}
-		printf("\n");
-	}
-	printf("==========================\n");
 
 	return 0;
 }
@@ -287,7 +233,7 @@ int fixWorld(int size, int w_starvation, int w_breeding){
 	int ate;
 	int lowest_breeding;
 	
-#pragma omp parallel for private(x, y, ate, aux, lowest_breeding)
+#pragma omp parallel for private(x, y, ate, aux, lowest_breeding) schedule(guided, MAX/4)
 	for(x=0; x<size; x++){
 		for(y=0 ; y<size; y++){
 			if(world[x][y].type == ice || (world[x][y].type == tree && world[x][y].count == 0))
@@ -444,11 +390,9 @@ int main(int argc, char **argv){
 	fclose(input_file);
 
 #ifdef VERBOSE
-	printf("INITIAL WORLD - w_number = %d\n", w_number);	
-	printWorldDetailed(size);
-	printf("\n");
-#endif
-	
+	start = omp_get_wtime();
+#endif	
+
 	/* Generate */
 	while(gen_num != 0){
 #pragma omp parallel sections
@@ -456,7 +400,7 @@ int main(int argc, char **argv){
 	#pragma omp section
 	{
 		/* 1st sub-generation - RED */
-		#pragma omp parallel for private(i, j)
+		#pragma omp parallel for private(i, j) schedule(dynamic, MAX/(8))
 		for(i=0; i<size; i++){
 			for(j = i%2 == 0 ? 0 : 1 ; j<size; j+=2){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
@@ -467,7 +411,7 @@ int main(int argc, char **argv){
 	#pragma omp section
 	{
 		/* 2nd sub-generation */
-		#pragma omp parallel for private(i, j)
+		#pragma omp parallel for private(i, j) schedule(dynamic, MAX/(8))
 		for(i=0; i<size; i++){
 			for(j = i%2 == 0 ? 1 : 0 ; j<size; j+=2){
 				computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
@@ -477,15 +421,13 @@ int main(int argc, char **argv){
 }
 		fixWorld(size, w_starvation, w_breeding);
 
-
-#ifdef VERBOSE
-		printf("\n\nIteration %d:\n", gen_num);		
-		printWorld(size);
-		printf("\n");
-#endif
-
 		gen_num--;
 	}
+
+#ifdef VERBOSE
+	end = omp_get_wtime();
+	printf("Elapsed time: %lf\n", end-start); 
+#endif
 	
 	/* Output */
 	printWorldFormatted(size);
