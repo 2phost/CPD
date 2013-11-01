@@ -43,8 +43,8 @@ test4:
 test5:
 	make serial
 	make parallel
-	./wolves-squirrels-s.out prof-test/world_10000.in 20 50 30 100 > 1.out
-	./wolves-squirrels-p.out prof-test/world_10000.in 20 50 30 100 > 2.out
+	./wolves-squirrels-s.out prof-test/world_1000.in 20 50 30 200 > 1.out
+	./wolves-squirrels-p.out prof-test/world_1000.in 20 50 30 200 > 2.out
 	diff 1.out 2.out
 	
 clean:
