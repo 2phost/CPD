@@ -6,6 +6,7 @@
 #define MAX 1000
 
 #define MASTER 0       /* id of the first process */ 
+#define FROM_MASTER 2
 
 clock_t start;
 clock_t end;

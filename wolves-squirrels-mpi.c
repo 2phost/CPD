@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "wolves-squirrels-serial.h"
+#include "wolves-squirrels-mpi.h"
 #include <mpi.h>
 
 MPI_Status status; 
@@ -337,10 +337,11 @@ int main(int argc, char **argv){
 	int x, y, size;
 	int w_breeding, s_breeding, w_starvation, gen_num;
 	char type_code;
-	char file_name;
+	char *file_name;
 	FILE * input_file;
 	double secs;
 	int averow, extra, rank, n_processes, offset, rows;
+	int mtype, dest, rowsAux, source;
 	// long fp_offset;
 
 	MPI_Init (&argc, &argv);
@@ -377,11 +378,9 @@ int main(int argc, char **argv){
 	  extra = size % n_processes;
 	  offset = 0;
 	  mtype = FROM_MASTER;
-	  fp_offset = ftell(input_file);
 
 	  for(dest=1; dest<n_processes; dest++){
 		rowsAux = dest <= extra ? averow+1 : averow;
-		// MPI_Send(fp_offset, 1, MPI_LONG, dest, mtype, MPI_COMM_WORLD);
 		MPI_Send(&offset, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
 		MPI_Send(&rowsAux, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
 		offset = offset + rowsAux;
@@ -401,10 +400,10 @@ int main(int argc, char **argv){
 	
 	strcpy(file_name, argv[1]);
 	MPI_Bcast(&argv[1], 1, MPI_INT, 0, MPI_COMM_WORLD);
-	input_file = fopen(file_name[1], "r");
+	input_file = fopen(file_name, "r");
 
 	fscanf(input_file, "%d", &x); // para saltar a primeira linha
-	while(fscanf(input_file, "%d %d %c", &x, 6y, &type_code) && x != offset);
+	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) && x != offset);
 
 	
 	while(x != offset + rowsAux){
@@ -424,10 +423,10 @@ int main(int argc, char **argv){
 #endif
 
 	/* Comum a todos os processos */
-	MPI_Bcast(w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(w_starvation, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(gen_num, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&w_starvation, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&gen_num, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef MPIVERBOSE
 	printf("Leitura: %lf\n", MPI_Wtime() - secs);
@@ -436,21 +435,12 @@ int main(int argc, char **argv){
 	
 	/* Generate */
 	while(gen_num != 0){
-
-	  /* 1st sub-generation - RED */
-	  for(i=0; i<size; i++){
-		for(j = i%2 == 0 ? 0 : 1 ; j<size; j+=2){
-		  computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
-		}		
+	  for(i=offset; i<offset+rowsAux; i++){
+		computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
 	  }
-	  /* 2nd sub-generation */
-	  for(i=0; i<size; i++){
-		for(j = i%2 == 0 ? 1 : 0 ; j<size; j+=2){
-		  computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
-		}
-	  }
+	  
+	  /* Enviar tudo para o master para actualizar de tudo e chamar o fixWorld */
 	  fixWorld(size, w_starvation, w_breeding);
-
 	  gen_num--;
 	}
 
