@@ -337,6 +337,7 @@ int main(int argc, char **argv){
 	int x, y, size;
 	int w_breeding, s_breeding, w_starvation, gen_num;
 	char type_code;
+	char file_name;
 	FILE * input_file;
 	double secs;
 	int averow, extra, rank, n_processes, offset, rows;
@@ -397,26 +398,27 @@ int main(int argc, char **argv){
 	  MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
 	  MPI_Recv(&rowsAux, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD, &status);
 	}
-
-	// usar strcpy para copiar o argv TODOOOO <---------	 
-	MPI_Bcast(&argv[1], 1, MPI_INT, 0, MPI_COMM_WORLD);
-	input_file = fopen(argv[1], "r");
-
-
-	/* Substituir para cada processo
-		while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
-			world[x][y].type = type_code;
-			if(world[x][y].type == wolf){
-				world[x][y].breeding_period = w_breeding;
-				world[x][y].starvation_period = w_starvation;
-			} else if(world[x][y].type == squirrel){
-				world[x][y].breeding_period = s_breeding;
-			}
-		}
 	
-		fclose(input_file);
-	*/
+	strcpy(file_name, argv[1]);
+	MPI_Bcast(&argv[1], 1, MPI_INT, 0, MPI_COMM_WORLD);
+	input_file = fopen(file_name[1], "r");
 
+	fscanf(input_file, "%d", &x); // para saltar a primeira linha
+	while(fscanf(input_file, "%d %d %c", &x, 6y, &type_code) && x != offset);
+
+	
+	while(x != offset + rowsAux){
+	  world[x][y].type = type_code;
+	  if(world[x][y].type == wolf){
+		world[x][y].breeding_period = w_breeding;
+		world[x][y].starvation_period = w_starvation;
+	  } else if(world[x][y].type == squirrel){
+		world[x][y].breeding_period = s_breeding;
+	  }
+	}
+	
+	fclose(input_file);
+	
 #ifdef VERBOSE
 	start = clock();
 #endif
@@ -434,6 +436,7 @@ int main(int argc, char **argv){
 	
 	/* Generate */
 	while(gen_num != 0){
+
 	  /* 1st sub-generation - RED */
 	  for(i=0; i<size; i++){
 		for(j = i%2 == 0 ? 0 : 1 ; j<size; j+=2){
