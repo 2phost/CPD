@@ -11,7 +11,7 @@ struct world *move(entity_types e, int x, int y, int size, int rows, struct worl
 	int p = 0;
 	struct world *pos[4];
 
-	printf("entrei o Rank: %d\n", rank);
+
 	/* Search */
 	switch(world[x][y].type){
 
@@ -129,9 +129,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 	struct world * move_motion = NULL;
 	int sot = 0, starv=0;
 
-	printf("Rank: %d Rows: %d\n", rank, rows);
 	
-	printf("%d sdafsdsdfa %d afwaeffsfs %d %c\n", rank,  x, y, world[x][y].type);
 	switch(world[x][y].type){
 
 		/* At each iteration the wolf trie to move to a cell with a squirrel
@@ -159,7 +157,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			
 
 			move_motion = move(wolf, x, y, world_size, rows, world, rank);
-			printf("RETURN RANK:%d\n", rank);
+
 
 			if(move_motion != NULL){
 				
@@ -201,7 +199,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 		case squirrel:
 
 		  move_motion = move(squirrel, x, y, world_size, rows, world, rank);
-		  printf("RETURN RANK:%d\n", rank);
+		  
 
 			if(move_motion != NULL){
 
@@ -504,9 +502,6 @@ int main(int argc, char **argv){
 		}
 	}
 
-#ifdef MPIVERBOSE
-	  printf("Cheguei bebé %d\n", rank);
-#endif
 
 #ifdef VERBOSE
 //	start = clock();
@@ -527,26 +522,66 @@ int main(int argc, char **argv){
 #endif
 
 	/* Generate */
+	MPI_Status	*statuses[2];
 	MPI_Request *request[2];
 	struct world *worldaux1, *worldaux2;
 		
+	//worldaux1 = (struct world*) malloc(sizeof(struct world)*size);
+	//worldaux2 = (struct world*) malloc(sizeof(struct world)*size);
+
 	while(gen_num != 0){
+		
+		if(rank == 1){
+			for(i = 0; i < size ; i++){
+				proc_world[rowsAux][i].type = empty;
+				proc_world[rowsAux][i].count = 0;
+				proc_world[rowsAux][i].breeding_period = 0;
+				proc_world[rowsAux][i].starvation_period = 0;
+				proc_world[rowsAux][i].breed = 0;
+				for(z=0; z < 5; z++)
+					world_global[i][j].conflicts[z]=NULL;
+			}
+		}else if(rank == MASTER){
+			for(i = 0; i < size ; i++){
+				proc_world[0][i].type = empty;
+				proc_world[0][i].count = 0;
+				proc_world[0][i].breeding_period = 0;
+				proc_world[0][i].starvation_period = 0;
+				proc_world[0][i].breed = 0;
+				for(z=0; z < 5; z++)
+					world_global[i][j].conflicts[z]=NULL;
+			}
+		}else{
+			for(i = 0; i < size ; i++){
+				proc_world[0][i].type = empty;
+				proc_world[0][i].count = 0;
+				proc_world[0][i].breeding_period = 0;
+				proc_world[0][i].starvation_period = 0;
+				proc_world[0][i].breed = 0;
+				for(z=0; z < 5; z++)
+					world_global[i][j].conflicts[z]=NULL;
+				proc_world[rowsAux][i].type = empty;
+				proc_world[rowsAux][i].count = 0;
+				proc_world[rowsAux][i].breeding_period = 0;
+				proc_world[rowsAux][i].starvation_period = 0;
+				proc_world[rowsAux][i].breed = 0;
+				for(z=0; z < 5; z++)
+					world_global[i][j].conflicts[z]=NULL;
+			}
+		}
+
 	  for(i = (rank==1? 0 : 1); i< (rank==1 ? rowsAux : rowsAux+1) ; i++){
 		for(j=0; j<size; j++){
 		  computeCell(i, j, s_breeding, w_breeding, w_starvation, size, rowsAux+aditional, proc_world, rank);
 		}
 	  }
 	  
-	  //gen_num++;
-	  //continue;
-	  MPI_Finalize();
-	  return 0;
 
 	  /*Enviar a  linha de coisas estranhas para o(s) processo(s) da fronteira */
 	  if(rank == 1){
 		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_BYTE, rank+1, 2, MPI_COMM_WORLD, request[0]);
 		MPI_Send(proc_world[rowsAux], sizeof(struct world)*size, MPI_BYTE, (rank+1)%n_processes, rank, MPI_COMM_WORLD);
-		MPI_Wait(request[0], &status);
+		MPI_Wait(request[0], statuses[0]);
 
 		/* Juntar aos conflictos*/
 		for(i=0; i<size; i++){
@@ -559,7 +594,7 @@ int main(int argc, char **argv){
 	  } else if(rank == MASTER){
 		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_BYTE, n_processes-1, n_processes-1, MPI_COMM_WORLD, request[0]);
 		MPI_Send(proc_world[averow], sizeof(struct world)*size, MPI_BYTE, n_processes-1, rank, MPI_COMM_WORLD);
-		MPI_Wait(request[0], &status);
+		MPI_Wait(request[0], statuses[0]);
 
 		for(i=0; i<size; i++){
 		  proc_world[0][i].conflicts[proc_world[0][i].count] = (conflict*)malloc(sizeof(struct conflicts));
@@ -570,11 +605,11 @@ int main(int argc, char **argv){
 		}
 	  } else {
 		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_BYTE, rank+1%n_processes, rank+1%n_processes, MPI_COMM_WORLD, request[0]);
-		MPI_Irecv(worldaux2, sizeof(struct world)*size, MPI_BYTE, rank-1%n_processes, rank+1%n_processes, MPI_COMM_WORLD, request[1]);
+		MPI_Irecv(worldaux2, sizeof(struct world)*size, MPI_BYTE, rank-1%n_processes, rank-1%n_processes, MPI_COMM_WORLD, request[1]);
 		MPI_Send(proc_world[rowsAux], sizeof(struct world)*size, MPI_BYTE, (rank+1)%n_processes, rank, MPI_COMM_WORLD);
 		MPI_Send(proc_world[rowsAux], sizeof(struct world)*size, MPI_BYTE, (rank-1)%n_processes, rank, MPI_COMM_WORLD);
-		MPI_Wait(request[0], &status);
-		MPI_Wait(request[1], &status);
+		MPI_Wait(request[0], statuses[0]);
+		MPI_Wait(request[1], statuses[1]);
 
 		for(i=0; i<size; i++){
 		  proc_world[0][i].conflicts[proc_world[0][i].count] = (conflict*)malloc(sizeof(struct conflicts));
