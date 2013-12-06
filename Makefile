@@ -1,3 +1,7 @@
+mpi:
+	mpicc -g -o wolves-squirrels-mpi.out -DMPIVERBOSE=1 wolves-squirrels-mpi.c wolves-squirrels-mpi.h
+	mpirun -np 4 wolves-squirrels-mpi.out prof-test/world_10.in 20 5 30 5
+	
 serial-v:
 	gcc -c -DVERBOSE=1 wolves-squirrels-serial.h wolves-squirrels-serial.c
 	gcc wolves-squirrels-serial.o -o wolves-squirrels-serial.out

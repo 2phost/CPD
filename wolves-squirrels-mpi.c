@@ -342,7 +342,8 @@ int main(int argc, char **argv){
 	double secs;
 	int averow, extra, rank, n_processes, offset, rows;
 	int mtype, dest, rowsAux, source;
-	// long fp_offset;
+
+	
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank); //Rank, an integer, is used in MPI to be a process identifier associated with a communicator
@@ -361,6 +362,7 @@ int main(int argc, char **argv){
 	  s_breeding = atoi(argv[3]);
 	  w_starvation = atoi(argv[4]);
 	  gen_num = atoi(argv[5]);
+	  strcpy(file_name, argv[1]);
 	  
 	  input_file = fopen(argv[1], "r");
 	  if(input_file == NULL){
@@ -386,6 +388,13 @@ int main(int argc, char **argv){
 		offset = offset + rowsAux;
 	  }
 	  
+	  MPI_Bcast(file_name, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	  /* Comum a todos os processos */
+	  MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	  MPI_Bcast(&s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	  MPI_Bcast(&w_starvation, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	  MPI_Bcast(&gen_num, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
 #ifdef MPIVERBOSE
 	  printf("Distribuição: %lf\n", MPI_Wtime() - secs);
 	  secs = MPI_Wtime();
@@ -398,15 +407,16 @@ int main(int argc, char **argv){
 	  MPI_Recv(&rowsAux, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD, &status);
 	}
 	
-	strcpy(file_name, argv[1]);
-	MPI_Bcast(&argv[1], 1, MPI_INT, 0, MPI_COMM_WORLD);
+	/* Comum a todos os processos */
 	input_file = fopen(file_name, "r");
 
 	fscanf(input_file, "%d", &x); // para saltar a primeira linha
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) && x != offset);
-
 	
+	// CADA PROCESSO PREENCHER O SEU MUNDO
 	while(x != offset + rowsAux){
+	  //ERRO POR TODO O LADO
+	  // CADA UM TEM UM MUNDO DE 0 ATÉ OFFSET + ROWSAUX
 	  world[x][y].type = type_code;
 	  if(world[x][y].type == wolf){
 		world[x][y].breeding_period = w_breeding;
@@ -421,12 +431,6 @@ int main(int argc, char **argv){
 #ifdef VERBOSE
 	start = clock();
 #endif
-
-	/* Comum a todos os processos */
-	MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&w_starvation, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&gen_num, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef MPIVERBOSE
 	printf("Leitura: %lf\n", MPI_Wtime() - secs);
