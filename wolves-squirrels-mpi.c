@@ -5,7 +5,7 @@
 MPI_Status status; 
 
 /* Move */
-struct world *move(entity_types e, int x, int y, int size, int rows){
+struct world *move(entity_types e, int x, int y, int size, int rows, struct world **world){
 	int cell_number = 0;
 	int cell_select = 0;
 	int p = 0;
@@ -71,10 +71,10 @@ int initWorld(int world_size){
 	for(i=0; i < world_size; i++)
 		for(j=0; j < world_size; j++){
 			for(z=0; z < 5; z++)
-				world[i][j].conflicts[z]=NULL;
-			world[i][j].type = empty;
-			world[i][j].breed = 0;
-			world[i][j].count=0;
+				world_global[i][j].conflicts[z]=NULL;
+			world_global[i][j].type = empty;
+			world_global[i][j].breed = 0;
+			world_global[i][j].count=0;
 		}
 
 	return 0;
@@ -88,8 +88,8 @@ int printWorldFormatted(int world_size){
 	
 	for(i=0; i < world_size; i++){
 		for(j=0; j < world_size; j++){
-			if(world[i][j].type != empty)			
-				printf("%d %d %c\n", i, j, world[i][j].type);	
+			if(world_global[i][j].type != empty)			
+				printf("%d %d %c\n", i, j, world_global[i][j].type);	
 		}
 	}
 
@@ -122,7 +122,7 @@ int printProcWorldFormatted(int size, int rank, struct world** proc_world){
 }
 
 
-int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size, struct world world){
+int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size, int rows, struct world **world){
 
 	
 	struct world * move_motion = NULL;
@@ -152,7 +152,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				break;
 			}
 			
-			move_motion = move(wolf, x, y, world_size);
+			move_motion = move(wolf, x, y, world_size, rows, world);
 
 			if(move_motion != NULL){
 				
@@ -193,7 +193,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			sot = 1;
 		case squirrel:
 
-			move_motion = move(squirrel, x, y, world_size);
+			move_motion = move(squirrel, x, y, world_size, rows, world);
 
 			if(move_motion != NULL){
 
@@ -238,7 +238,7 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 	return 0;
 }
 
-int fixWorld(int size, int w_starvation, int w_breeding, int rows, struct world world, int rank){
+int fixWorld(int size, int w_starvation, int w_breeding, int rows, struct world **world, int rank){
 	int x,y;
 	int aux;
 	int ate;
@@ -404,20 +404,17 @@ int main(int argc, char **argv){
 
 
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
-		world[x][y].type = type_code;
-		if(world[x][y].type == wolf){
-			world[x][y].breeding_period = w_breeding;
-			world[x][y].starvation_period = w_starvation;
-		} else if(world[x][y].type == squirrel){
-			world[x][y].breeding_period = s_breeding;
+		world_global[x][y].type = type_code;
+		if(world_global[x][y].type == wolf){
+			world_global[x][y].breeding_period = w_breeding;
+			world_global[x][y].starvation_period = w_starvation;
+		} else if(world_global[x][y].type == squirrel){
+			world_global[x][y].breeding_period = s_breeding;
 		}
 	}
 
 	fclose(input_file);
 
-#ifdef MPIVERBOSE
-	  printf("GLobal World created \n");
-#endif
 	  
 	/* Envia parcela a cada processo */
 	averow = size / n_processes;
@@ -434,7 +431,7 @@ int main(int argc, char **argv){
 		MPI_Send(&size, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
 
 		for(i=0; i < rowsAux; i++)
-			MPI_Send(world[offset+i], sizeof(struct world)*size, MPI_BYTE, dest, mtype, MPI_COMM_WORLD);
+			MPI_Send(world_global[offset+i], sizeof(struct world)*size, MPI_BYTE, dest, mtype, MPI_COMM_WORLD);
 
 		offset = offset + rowsAux;
   	}
@@ -444,7 +441,7 @@ int main(int argc, char **argv){
 		proc_world[i] = (struct world*) malloc(sizeof(struct world)*size);
 	
 	for(i=1; i< averow+1; i++)
-		proc_world[i] = world[offset+i]; 				
+		proc_world[i] = world_global[offset+i]; 				
 	 
 	/* Comum a todos os processos */
 	MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -508,63 +505,63 @@ int main(int argc, char **argv){
 	while(gen_num != 0){
 	  for(i=0; i<rowsAux; i++){
 		for(j=0; j<size; j++){
-		  computeCell(i, j, s_breeding, w_breeding, w_starvation, size, world);
+		  computeCell(i, j, s_breeding, w_breeding, w_starvation, size, rowsAux, proc_world);
 		}
 	  }
 
 	  /*Enviar a  linha de coisas estranhas para o(s) processo(s) da fronteira */
 	  if(rank == 1){
-		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_Byte, rank+1, 2, MPI_COMM_WORLD, &request[0]);
-		MPI_Send(world[rowsAux], sizeof(struct world)*size, MPI_Byte, (rank+1)%n_processes, rank, MPI_COMM_WORLD);
-		MPI_Wait(&request[0], &status);
+		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_BYTE, rank+1, 2, MPI_COMM_WORLD, request[0]);
+		MPI_Send(proc_world[rowsAux], sizeof(struct world)*size, MPI_BYTE, (rank+1)%n_processes, rank, MPI_COMM_WORLD);
+		MPI_Wait(request[0], &status);
 
 		/* Juntar aos conflictos*/
-		for(i=0; i<size, i++){
-		  world[rowsAux][i].conflicts[world[rowsAux][i].count] = (conflict*)malloc(sizeof(struct conflicts));
-		  world[rowsAux][i].conflicts[world[rowsAux][i].count]->type = worldaux1[i]->type;
-		  world[rowsAux][i].conflicts[world[rowsAux][i].count]->breeding_period = worldaux1[i]->breeding_period;
-		  world[rowsAux][i].conflicts[world[rowsAux][i].count]->starvation_period = worldaux1[i]->starvation_period;
-		  world[rowsAux][i].count += 1;
+		for(i=0; i<size; i++){
+		  proc_world[rowsAux][i].conflicts[proc_world[rowsAux][i].count] = (conflict*)malloc(sizeof(struct conflicts));
+		  proc_world[rowsAux][i].conflicts[proc_world[rowsAux][i].count]->type = worldaux1[i].type;
+		  proc_world[rowsAux][i].conflicts[proc_world[rowsAux][i].count]->breeding_period = worldaux1[i].breeding_period;
+		  proc_world[rowsAux][i].conflicts[proc_world[rowsAux][i].count]->starvation_period = worldaux1[i].starvation_period;
+		  proc_world[rowsAux][i].count += 1;
 		}
 	  } else if(rank == MASTER){
-		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_Byte, n_processes-1, n_processes-1, MPI_COMM_WORLD, &request[0]);
-		MPI_Send(world[averow], sizeof(struct world)*size, MPI_Byte, n_processes-1, rank, MPI_COMM_WORLD);
-		MPI_Wait(&request[0], &status);
+		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_BYTE, n_processes-1, n_processes-1, MPI_COMM_WORLD, request[0]);
+		MPI_Send(proc_world[averow], sizeof(struct world)*size, MPI_BYTE, n_processes-1, rank, MPI_COMM_WORLD);
+		MPI_Wait(request[0], &status);
 
-		for(i=0; i<size, i++){
-		  world[0][i].conflicts[world[0][i].count] = (conflict*)malloc(sizeof(struct conflicts));
-		  world[0][i].conflicts[world[0][i].count]->type = worldaux1[i]->type;
-		  world[0][i].conflicts[world[0][i].count]->breeding_period = worldaux1[i]->breeding_period;
-		  world[0][i].conflicts[world[0][i].count]->starvation_period = worldaux1[i]->starvation_period;
-		  world[0][i].count += 1;
+		for(i=0; i<size; i++){
+		  proc_world[0][i].conflicts[proc_world[0][i].count] = (conflict*)malloc(sizeof(struct conflicts));
+		  proc_world[0][i].conflicts[proc_world[0][i].count]->type = worldaux1[i].type;
+		  proc_world[0][i].conflicts[proc_world[0][i].count]->breeding_period = worldaux1[i].breeding_period;
+		  proc_world[0][i].conflicts[proc_world[0][i].count]->starvation_period = worldaux1[i].starvation_period;
+		  proc_world[0][i].count += 1;
 		}
 	  } else {
-		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_Byte, rank+1%n_processes, rank+1%n_processes, MPI_COMM_WORLD, &request[0]);
-		MPI_Irecv(worldaux2, sizeof(struct world)*size, MPI_Byte, rank-1%n_processes, rank+1%n_processes, MPI_COMM_WORLD, &request[1]);
-		MPI_Send(world[rowsAux], sizeof(struct world)*size, MPI_Byte, (rank+1)%n_processes, rank, MPI_COMM_WORLD);
-		MPI_Send(world[rowsAux], sizeof(struct world)*size, MPI_Byte, (rank-1)%n_processes, rank, MPI_COMM_WORLD);
-		MPI_Wait(&request[0], &status);
-		MPI_Wait(&request[1], &status);
+		MPI_Irecv(worldaux1, sizeof(struct world)*size, MPI_BYTE, rank+1%n_processes, rank+1%n_processes, MPI_COMM_WORLD, request[0]);
+		MPI_Irecv(worldaux2, sizeof(struct world)*size, MPI_BYTE, rank-1%n_processes, rank+1%n_processes, MPI_COMM_WORLD, request[1]);
+		MPI_Send(proc_world[rowsAux], sizeof(struct world)*size, MPI_BYTE, (rank+1)%n_processes, rank, MPI_COMM_WORLD);
+		MPI_Send(proc_world[rowsAux], sizeof(struct world)*size, MPI_BYTE, (rank-1)%n_processes, rank, MPI_COMM_WORLD);
+		MPI_Wait(request[0], &status);
+		MPI_Wait(request[1], &status);
 
-		for(i=0; i<size, i++){
-		  world[0][i].conflicts[world[0][i].count] = (conflict*)malloc(sizeof(struct conflicts));
-		  world[0][i].conflicts[world[0][i].count]->type = worldaux1[i]->type;
-		  world[0][i].conflicts[world[0][i].count]->breeding_period = worldaux1[i]->breeding_period;
-		  world[0][i].conflicts[world[0][i].count]->starvation_period = worldaux1[i]->starvation_period;
-		  world[0][i].count += 1;
+		for(i=0; i<size; i++){
+		  proc_world[0][i].conflicts[proc_world[0][i].count] = (conflict*)malloc(sizeof(struct conflicts));
+		  proc_world[0][i].conflicts[proc_world[0][i].count]->type = worldaux1[i].type;
+		  proc_world[0][i].conflicts[proc_world[0][i].count]->breeding_period = worldaux1[i].breeding_period;
+		  proc_world[0][i].conflicts[proc_world[0][i].count]->starvation_period = worldaux1[i].starvation_period;
+		  proc_world[0][i].count += 1;
 		}
 
-		for(i=0; i<size, i++){
-		  world[rowsAux][i].conflicts[world[rowsAux][i].count] = (conflict*)malloc(sizeof(struct conflicts));
-		  world[rowsAux][i].conflicts[world[rowsAux][i].count]->type = worldaux1[i]->type;
-		  world[rowsAux][i].conflicts[world[rowsAux][i].count]->breeding_period = worldaux1[i]->breeding_period;
-		  world[rowsAux][i].conflicts[world[rowsAux][i].count]->starvation_period = worldaux1[i]->starvation_period;
-		  world[rowsAux][i].count += 1;
+		for(i=0; i<size; i++){
+		  proc_world[rowsAux][i].conflicts[proc_world[rowsAux][i].count] = (conflict*)malloc(sizeof(struct conflicts));
+		  proc_world[rowsAux][i].conflicts[proc_world[rowsAux][i].count]->type = worldaux1[i].type;
+		  proc_world[rowsAux][i].conflicts[proc_world[rowsAux][i].count]->breeding_period = worldaux1[i].breeding_period;
+		  proc_world[rowsAux][i].conflicts[proc_world[rowsAux][i].count]->starvation_period = worldaux1[i].starvation_period;
+		  proc_world[rowsAux][i].count += 1;
 		}
 	  }
 	  
 	  /* fix do pequeno mundo do processo */
-	  fixWorld(size, w_starvation, w_breeding, rowsAux, world, rank);
+	  fixWorld(size, w_starvation, w_breeding, rowsAux, proc_world, rank);
 	  
 	  gen_num--;
 	}
