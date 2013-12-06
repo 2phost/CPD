@@ -343,7 +343,7 @@ int main(int argc, char **argv){
 	int averow, extra, rank, n_processes, offset, rows;
 	int mtype, dest, rowsAux, source;
 
-	
+	struct world **proc_world;
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank); //Rank, an integer, is used in MPI to be a process identifier associated with a communicator
@@ -371,24 +371,36 @@ int main(int argc, char **argv){
 	  }
 	  
 	  fscanf(input_file, "%d", &size);
-	  
-	  /* Talvez dê para melhorar */
-	  initWorld(size);
-	  
-	  /* Envia parcela a cada processo */
-	  averow = size / n_processes;
-	  extra = size % n_processes;
-	  offset = 0;
-	  mtype = FROM_MASTER;
 
-	  for(dest=1; dest<n_processes; dest++){
+  /* Talvez dê para melhorar */
+  initWorld(size);
+
+	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code)!=EOF){
+		worldantigo[x][y]=type_code;	
+		if(worldantigo[x][y].type == wolf){
+			worldantigo[x][y].breeding_period = w_breeding;
+			worldantigo[x][y].starvation_period = w_starvation;
+		} else if(worldantigo[x][y].type == squirrel){
+			worldantigo[x][y].breeding_period = s_breeding;
+	  }
+	}			
+	  
+  /* Envia parcela a cada processo */
+  averow = size / n_processes;
+  extra = size % n_processes;
+  offset = 0;
+  mtype = FROM_MASTER;
+
+
+	for(dest=1; dest<n_processes; dest++){
+		
 		rowsAux = dest <= extra ? averow+1 : averow;
 		MPI_Send(&offset, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
 		MPI_Send(&rowsAux, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+		MPI_Send(worldantigo[offset], sizeof(struct world)*size*rowsAux, MPI_BYTE, dest, mtype, MPI_COMM_WORLD);
 		offset = offset + rowsAux;
-	  }
-	  
-	  MPI_Bcast(file_name, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  }
+	 
 	  /* Comum a todos os processos */
 	  MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	  MPI_Bcast(&s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -404,29 +416,70 @@ int main(int argc, char **argv){
 	  mtype = FROM_MASTER;
 	  source = MASTER;
 	  MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
-	  MPI_Recv(&rowsAux, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD, &status);
+	  MPI_Recv(&rowsAux, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
+
+		if(rank == 1){
+			aditional = 1;
+			start_line = 0;
+		} else{
+			aditional = 2;
+			start_line = 1;
+		}
+
+		proc_world = (struct world**) malloc(sizeof(struct world*)*(rowsAux+aditional));
+		for(i=0 ; i <= rowsAux+aditional; i++)
+			proc_world[i]=(struct world*) malloc(sizeof(struct world)*size);
+		
+		MPI_Recv(proc_world[start_line], sizeof(struct world)*size*rowsAux, MPI_BYTE, source, mtype, MPI_COMM_WORLD, &status);
 	}
 	
 	/* Comum a todos os processos */
 	input_file = fopen(file_name, "r");
 
-	fscanf(input_file, "%d", &x); // para saltar a primeira linha
+	fscanf(input_file, "%d", &size); // para saltar a primeira linha
 	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) && x != offset);
 	
+#ifdef MPIVERBOSE
+	if(rank==0)
+		printf("Skipped to correct offset");
+#endif
+
+	int additional, start_line;
+
+	if(rank == MASTER || rank == 1)
+		aditional = 1;
+	else
+		aditional = 2;
+
+	if(rank == 1)
+		start_line = 0;
+	else
+		start_line = 1;
+
+	proc_world = (struct world**) malloc(sizeof(struct world*)*(rowsAux+aditional));
+	for(i=0 ; i <= rowsAux+aditional; i++)
+		proc_world[i]=(struct world*) malloc(sizeof(struct world)*size);
+
+
 	// CADA PROCESSO PREENCHER O SEU MUNDO
-	while(x != offset + rowsAux){
-	  //ERRO POR TODO O LADO
-	  // CADA UM TEM UM MUNDO DE 0 ATÉ OFFSET + ROWSAUX
-	  world[x][y].type = type_code;
-	  if(world[x][y].type == wolf){
-		world[x][y].breeding_period = w_breeding;
-		world[x][y].starvation_period = w_starvation;
-	  } else if(world[x][y].type == squirrel){
-		world[x][y].breeding_period = s_breeding;
+	/*for(x = start_line ; x <= rowsAux; x++){	
+	  proc_world[x][y].type = type_code;
+	  if(proc_world[x][y].type == wolf){
+		proc_world[x][y].breeding_period = w_breeding;
+		proc_world[x][y].starvation_period = w_starvation;
+	  } else if(proc_world[x][y].type == squirrel){
+		proc_world[x][y].breeding_period = s_breeding;
 	  }
-	}
-	
+	}*/
+
 	fclose(input_file);
+
+	if(rank == 0){
+		proc_world[rowsAux][0].type = 'w';
+		printf("%c\n", proc_world[rowsAux][0].type);
+		MPI_Finalize();	
+		return 0;
+	}	
 	
 #ifdef VERBOSE
 	start = clock();
