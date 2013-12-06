@@ -96,6 +96,30 @@ int printWorldFormatted(int world_size){
 	return 0;
 }
 
+int printProcWorldFormatted(int size, int rank, struct world** proc_world){
+
+	int i, j;
+	int aditional;
+
+	if(rank == 0 || rank == 1)
+		aditional = 1;
+	else
+		aditional = 2;
+	
+	printf("RANK %d\n", rank);
+
+	printf("%d\n", size);
+	
+	for(i=0; i < size+aditional; i++){
+		for(j=0; j < size; j++){
+			if(proc_world[i][j].type != empty)			
+				printf("%d %d %c\n", i, j, proc_world[i][j].type);	
+		}
+	}
+
+	return 0;
+}
+
 int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size){
 	
 	struct world * move_motion = NULL;
@@ -342,6 +366,7 @@ int main(int argc, char **argv){
 	double secs;
 	int averow, extra, rank, n_processes, offset, rows;
 	int mtype, dest, rowsAux, source;
+	int aditional, start_line;
 
 	struct world **proc_world;
 
@@ -352,44 +377,50 @@ int main(int argc, char **argv){
 	/* Processo Master */
 	if (rank == MASTER) {
 	  secs =  MPI_Wtime();
+
 	  if(argc <= 5){
 		printf("ERROR: Expected 5 arguments provided %d.\n", argc);
 		printf("Expected:\n./wolves-squirrels-serial <InputFile> <WolfBreedingPeriod> <SquirrelBreedingPeriod> <WolfStarvationPerior> <Generations>\n");	
 		return -1;
 	  }
-	  
+
 	  w_breeding = atoi(argv[2]);
 	  s_breeding = atoi(argv[3]);
 	  w_starvation = atoi(argv[4]);
 	  gen_num = atoi(argv[5]);
-	  strcpy(file_name, argv[1]);
-	  
 	  input_file = fopen(argv[1], "r");
 	  if(input_file == NULL){
 		printf("ERROR: A valid input file is expected. %s is not a valid file.\n", argv[1]);	
 		return -1;
 	  }
-	  
-	  fscanf(input_file, "%d", &size);
 
   /* Talvez dê para melhorar */
-  initWorld(size);
+	fscanf(input_file, "%d", &size);
 
-	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code)!=EOF){
-		worldantigo[x][y]=type_code;	
-		if(worldantigo[x][y].type == wolf){
-			worldantigo[x][y].breeding_period = w_breeding;
-			worldantigo[x][y].starvation_period = w_starvation;
-		} else if(worldantigo[x][y].type == squirrel){
-			worldantigo[x][y].breeding_period = s_breeding;
-	  }
-	}			
+	initWorld(size);
+
+
+	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) != EOF){
+		world[x][y].type = type_code;
+		if(world[x][y].type == wolf){
+			world[x][y].breeding_period = w_breeding;
+			world[x][y].starvation_period = w_starvation;
+		} else if(world[x][y].type == squirrel){
+			world[x][y].breeding_period = s_breeding;
+		}
+	}
+
+	fclose(input_file);
+
+#ifdef MPIVERBOSE
+	  printf("GLobal World created \n");
+#endif
 	  
-  /* Envia parcela a cada processo */
-  averow = size / n_processes;
-  extra = size % n_processes;
-  offset = 0;
-  mtype = FROM_MASTER;
+	/* Envia parcela a cada processo */
+	averow = size / n_processes;
+	extra = size % n_processes;
+	offset = 0;
+	mtype = FROM_MASTER;
 
 
 	for(dest=1; dest<n_processes; dest++){
@@ -397,26 +428,42 @@ int main(int argc, char **argv){
 		rowsAux = dest <= extra ? averow+1 : averow;
 		MPI_Send(&offset, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
 		MPI_Send(&rowsAux, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
-		MPI_Send(worldantigo[offset], sizeof(struct world)*size*rowsAux, MPI_BYTE, dest, mtype, MPI_COMM_WORLD);
+		MPI_Send(&size, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+
+		for(i=0; i < rowsAux; i++)
+			MPI_Send(world[offset+i], sizeof(struct world)*size, MPI_BYTE, dest, mtype, MPI_COMM_WORLD);
+
 		offset = offset + rowsAux;
-  }
+  	}
+
+	proc_world = (struct world**) malloc(sizeof(struct world*)*(averow+1));
+	for(i = 0; i < averow+1; i++)
+		proc_world[i] = (struct world*) malloc(sizeof(struct world)*size);
+	
+	for(i=1; i< averow+1; i++)
+		proc_world[i] = world[offset+i]; 				
 	 
-	  /* Comum a todos os processos */
-	  MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	  MPI_Bcast(&s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	  MPI_Bcast(&w_starvation, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	  MPI_Bcast(&gen_num, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	/* Comum a todos os processos */
+	MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&w_starvation, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&gen_num, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef MPIVERBOSE
 	  printf("Distribuição: %lf\n", MPI_Wtime() - secs);
 	  secs = MPI_Wtime();
 #endif
-	  
+
 	} else if(rank > 0) {
-	  mtype = FROM_MASTER;
-	  source = MASTER;
-	  MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
-	  MPI_Recv(&rowsAux, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
+		
+		mtype = FROM_MASTER;
+		source = MASTER;
+		MPI_Recv(&offset, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
+		MPI_Recv(&rowsAux, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
+		MPI_Recv(&size, 1, MPI_INT, source, mtype, MPI_COMM_WORLD, &status);
+
+		proc_world = (struct world**) malloc(sizeof(struct world*)*(rowsAux+aditional));
+		
 
 		if(rank == 1){
 			aditional = 1;
@@ -426,80 +473,30 @@ int main(int argc, char **argv){
 			start_line = 1;
 		}
 
-		proc_world = (struct world**) malloc(sizeof(struct world*)*(rowsAux+aditional));
-		for(i=0 ; i <= rowsAux+aditional; i++)
-			proc_world[i]=(struct world*) malloc(sizeof(struct world)*size);
-		
-		MPI_Recv(proc_world[start_line], sizeof(struct world)*size*rowsAux, MPI_BYTE, source, mtype, MPI_COMM_WORLD, &status);
+		for(i = 0; i < rowsAux+aditional; i++){
+			proc_world[i] = (struct world*) malloc(sizeof(struct world)*size);
+			for(j = 0; j < size; j ++)
+				proc_world[i][j].type = empty;
+		}
+			
+		for(i = start_line; i < rowsAux+start_line; i++){
+			MPI_Recv(proc_world[i], sizeof(struct world)*size, MPI_BYTE, source, mtype, MPI_COMM_WORLD, &status);
+		}
 	}
-	
-	/* Comum a todos os processos */
-	input_file = fopen(file_name, "r");
 
-	fscanf(input_file, "%d", &size); // para saltar a primeira linha
-	while(fscanf(input_file, "%d %d %c", &x, &y, &type_code) && x != offset);
-	
 #ifdef MPIVERBOSE
-	if(rank==0)
-		printf("Skipped to correct offset");
+	  printf("Cheguei bebé %d\n", rank);
 #endif
 
-	int additional, start_line;
-
-	if(rank == MASTER || rank == 1)
-		aditional = 1;
-	else
-		aditional = 2;
-
-	if(rank == 1)
-		start_line = 0;
-	else
-		start_line = 1;
-
-	proc_world = (struct world**) malloc(sizeof(struct world*)*(rowsAux+aditional));
-	for(i=0 ; i <= rowsAux+aditional; i++)
-		proc_world[i]=(struct world*) malloc(sizeof(struct world)*size);
-
-
-	// CADA PROCESSO PREENCHER O SEU MUNDO
-	/*for(x = start_line ; x <= rowsAux; x++){	
-	  proc_world[x][y].type = type_code;
-	  if(proc_world[x][y].type == wolf){
-		proc_world[x][y].breeding_period = w_breeding;
-		proc_world[x][y].starvation_period = w_starvation;
-	  } else if(proc_world[x][y].type == squirrel){
-		proc_world[x][y].breeding_period = s_breeding;
-	  }
-	}*/
-
-	fclose(input_file);
-
-	if(rank == 0){
-		proc_world[rowsAux][0].type = 'w';
-		printf("%c\n", proc_world[rowsAux][0].type);
-		MPI_Finalize();	
-		return 0;
-	}	
-	
 #ifdef VERBOSE
-	start = clock();
+//	start = clock();
 #endif
 
 #ifdef MPIVERBOSE
-	printf("Leitura: %lf\n", MPI_Wtime() - secs);
-	secs =  MPI_Wtime();
+//	printf("Leitura: %lf\n", MPI_Wtime() - secs);
+//	secs =  MPI_Wtime();
 #endif
-	
-	/* Generate */
-	while(gen_num != 0){
-	  for(i=offset; i<offset+rowsAux; i++){
-		computeCell(i, j, s_breeding, w_breeding, w_starvation, size);
-	  }
-	  
-	  /* Enviar tudo para o master para actualizar de tudo e chamar o fixWorld */
-	  fixWorld(size, w_starvation, w_breeding);
-	  gen_num--;
-	}
+
 
 #ifdef VERBOSE
 	end = clock();
@@ -509,7 +506,7 @@ int main(int argc, char **argv){
 	MPI_Finalize();
 
 	/* Output */
-	printWorldFormatted(size);
+	//printWorldFormatted(size);
 			
 	return 0;
 }
