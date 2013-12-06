@@ -55,9 +55,9 @@ int printWorldFormatted(int world_size);
 
 /* Processes the cell's iteration, depending of what kind of entity is at the current cell
  * specified by the position (x, y) */
-int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size, int rows, struct world **world);
+int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size, int rows, struct world **world, int rank);
 
 int fixWorld(int size, int w_starvation, int w_breeding, int rows, struct world **world, int rank);
 
 /**/
-struct world *move(entity_types e, int x, int y, int size, int rows, struct world **world);
+struct world *move(entity_types e, int x, int y, int size, int rows, struct world **world, int rank);

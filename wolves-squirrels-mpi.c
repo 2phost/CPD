@@ -5,12 +5,13 @@
 MPI_Status status; 
 
 /* Move */
-struct world *move(entity_types e, int x, int y, int size, int rows, struct world **world){
+struct world *move(entity_types e, int x, int y, int size, int rows, struct world **world, int rank){
 	int cell_number = 0;
 	int cell_select = 0;
 	int p = 0;
 	struct world *pos[4];
 
+	printf("entrei o Rank: %d\n", rank);
 	/* Search */
 	switch(world[x][y].type){
 
@@ -20,7 +21,7 @@ struct world *move(entity_types e, int x, int y, int size, int rows, struct worl
 				pos[p++] = &world[x-1][y];
 			if(y+1 < size && world[x][y+1].type == squirrel)
 				pos[p++] = &world[x][y+1];
-			if(x+1 < rows+1 && world[x+1][y].type == squirrel)
+			if(x+1 < rows && world[x+1][y].type == squirrel)
 				pos[p++] = &world[x+1][y];
 			if(y-1 >= 0 && world[x][y-1].type == squirrel)
 				pos[p++] = &world[x][y-1];
@@ -30,7 +31,7 @@ struct world *move(entity_types e, int x, int y, int size, int rows, struct worl
 					pos[p++] = &world[x-1][y];
 				if(y+1 < size && world[x][y+1].type == empty)
 					pos[p++] = &world[x][y+1];
-				if(x+1 < rows+1 && world[x+1][y].type == empty)
+				if(x+1 < rows && world[x+1][y].type == empty)
 					pos[p++] = &world[x+1][y];
 				if(y-1 >= 0 && world[x][y-1].type == empty)
 					pos[p++] = &world[x][y-1];
@@ -44,7 +45,7 @@ struct world *move(entity_types e, int x, int y, int size, int rows, struct worl
 				pos[p++] = &world[x-1][y];
 			if(y+1 < size && (world[x][y+1].type == tree || world[x][y+1].type == empty))
 				pos[p++] = &world[x][y+1];
-			if(x+1 < rows+1 && (world[x+1][y].type == tree || world[x+1][y].type == empty))
+			if(x+1 < rows && (world[x+1][y].type == tree || world[x+1][y].type == empty))
 				pos[p++] = &world[x+1][y];
 			if(y-1 >= 0 && (world[x][y-1].type == tree || world[x][y-1].type == empty))
 				pos[p++] = &world[x][y-1];
@@ -122,12 +123,15 @@ int printProcWorldFormatted(int size, int rank, struct world** proc_world){
 }
 
 
-int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size, int rows, struct world **world){
+int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size, int rows, struct world **world, int rank){
 
 	
 	struct world * move_motion = NULL;
 	int sot = 0, starv=0;
 
+	printf("Rank: %d Rows: %d\n", rank, rows);
+	
+	printf("%d sdafsdsdfa %d afwaeffsfs %d %c\n", rank,  x, y, world[x][y].type);
 	switch(world[x][y].type){
 
 		/* At each iteration the wolf trie to move to a cell with a squirrel
@@ -152,7 +156,10 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 				break;
 			}
 			
-			move_motion = move(wolf, x, y, world_size, rows, world);
+			
+
+			move_motion = move(wolf, x, y, world_size, rows, world, rank);
+			printf("RETURN RANK:%d\n", rank);
 
 			if(move_motion != NULL){
 				
@@ -193,7 +200,8 @@ int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, 
 			sot = 1;
 		case squirrel:
 
-			move_motion = move(squirrel, x, y, world_size, rows, world);
+		  move_motion = move(squirrel, x, y, world_size, rows, world, rank);
+		  printf("RETURN RANK:%d\n", rank);
 
 			if(move_motion != NULL){
 
@@ -360,7 +368,7 @@ int fixWorld(int size, int w_starvation, int w_breeding, int rows, struct world 
 
 int main(int argc, char **argv){
 
-	int i, j;	
+  int i, j, z;	
 	int x, y, size;
 	int w_breeding, s_breeding, w_starvation, gen_num;
 	char type_code;
@@ -437,23 +445,28 @@ int main(int argc, char **argv){
   	}
 
 	proc_world = (struct world**) malloc(sizeof(struct world*)*(averow+1));
-	for(i = 0; i < averow+1; i++)
-		proc_world[i] = (struct world*) malloc(sizeof(struct world)*size);
+	for(i = 0; i < averow+1; i++){
+	  proc_world[i] = (struct world*) malloc(sizeof(struct world)*size);
+	  for(j = 0; j < size; j ++){
+		proc_world[i][j].type = empty;
+		proc_world[i][j].count = 0;
+		proc_world[i][j].breeding_period = 0;
+		proc_world[i][j].starvation_period = 0;
+		proc_world[i][j].breed = 0;
+		for(z=0; z < 5; z++)
+		  world_global[i][j].conflicts[z]=NULL;
+	  }
+	}
 	
+
 	for(i=1; i< averow+1; i++)
 		proc_world[i] = world_global[offset+i]; 				
 	 
-	/* Comum a todos os processos */
-	MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&w_starvation, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&gen_num, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
 #ifdef MPIVERBOSE
 	  printf("Distribuição: %lf\n", MPI_Wtime() - secs);
 	  secs = MPI_Wtime();
 #endif
-
+	  aditional = 1;
 	} else if(rank > 0) {
 		
 		mtype = FROM_MASTER;
@@ -475,8 +488,15 @@ int main(int argc, char **argv){
 
 		for(i = 0; i < rowsAux+aditional; i++){
 			proc_world[i] = (struct world*) malloc(sizeof(struct world)*size);
-			for(j = 0; j < size; j ++)
-				proc_world[i][j].type = empty;
+			for(j = 0; j < size; j ++){
+			  proc_world[i][j].type = empty;
+			  proc_world[i][j].count = 0;
+			  proc_world[i][j].breeding_period = 0;
+			  proc_world[i][j].starvation_period = 0;
+			  proc_world[i][j].breed = 0;
+			  for(z=0; z < 5; z++)
+				world_global[i][j].conflicts[z]=NULL;
+			}
 		}
 			
 		for(i = start_line; i < rowsAux+start_line; i++){
@@ -492,22 +512,35 @@ int main(int argc, char **argv){
 //	start = clock();
 #endif
 
+	/* Comum a todos os processos */
+	MPI_Bcast(&w_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&s_breeding, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&w_starvation, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&gen_num, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+
+
+
 #ifdef MPIVERBOSE
 //	printf("Leitura: %lf\n", MPI_Wtime() - secs);
 //	secs =  MPI_Wtime();
 #endif
 
-	
 	/* Generate */
 	MPI_Request *request[2];
 	struct world *worldaux1, *worldaux2;
-
+		
 	while(gen_num != 0){
-	  for(i=0; i<rowsAux; i++){
+	  for(i = (rank==1? 0 : 1); i< (rank==1 ? rowsAux : rowsAux+1) ; i++){
 		for(j=0; j<size; j++){
-		  computeCell(i, j, s_breeding, w_breeding, w_starvation, size, rowsAux, proc_world);
+		  computeCell(i, j, s_breeding, w_breeding, w_starvation, size, rowsAux+aditional, proc_world, rank);
 		}
 	  }
+	  
+	  //gen_num++;
+	  //continue;
+	  MPI_Finalize();
+	  return 0;
 
 	  /*Enviar a  linha de coisas estranhas para o(s) processo(s) da fronteira */
 	  if(rank == 1){
