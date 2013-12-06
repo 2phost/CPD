@@ -31,16 +31,15 @@ struct conflicts {
 	int breeding_period;
 	int starvation_period;
 };
-typedef struct conflicts conflict; 
 
 struct world {
-	conflict *conflicts[5];
+	struct conflicts *conflicts;
 	int count;
 	entity_types type; /* Wolf, Squirrel, etc. */
 	int breeding_period;
 	int starvation_period;
 	int breed;  /*indicates if the entity can breed */
-} world[MAX][MAX];
+} worldantigo[MAX][MAX];
 
 /* Fill all the cells, of the square matrix of size world_size, with the empty entity_types*/
 int initWorld(int world_size);
@@ -54,7 +53,9 @@ int printWorldFormatted(int world_size);
 
 /* Processes the cell's iteration, depending of what kind of entity is at the current cell
  * specified by the position (x, y) */
-int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size);
+int computeCell(int x, int y, int s_breeding, int w_breeding, int w_starvation, int world_size, struct world world);
+
+int fixWorld(int size, int w_starvation, int w_breeding, int rows, struct world world, int rank);
 
 /**/
-struct world *move(entity_types e, int x, int y, int size);
+struct world *move(entity_types e, int x, int y, int size, int rows);
